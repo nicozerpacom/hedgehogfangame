@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>HTML Sonic 3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicIdle.webp">
+    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicWalking.webp">
+    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicRunning.webp">
+    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicBreaking.webp">
+
+    <style>
+        :root { background-color: hsl(0, 0%, 80%); }
+        #screen {
+            height: 250px /*240px*/;
+            background-color: hsl(0, 0%, 100%);
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: calc(100% - 24px);
+            overflow: auto;
+            transform-origin: top left;
+        }
+        #sonic {
+            width: 48px;
+            height: 48px;
+            background-image: url("/sprites/sonicIdle.webp");
+            position: absolute;
+            transform: translate(-24px, -24px);
+        }
+        #sonic.isWalking {
+            background-image: url("/sprites/sonicWalking.webp");
+        }
+        #sonic.isRunning {
+            background-image: url("/sprites/sonicRunning.webp");
+        }
+        #sonic.isBreaking {
+            background-image: url("/sprites/sonicBreaking.webp");
+        }
+        #sonic.isLeft {
+            transform: translate(-24px, -24px) rotateY(180deg);
+        }
+        #zoomButtonPlus, #zoomButtonMinus {
+            position: absolute;
+            z-index: 2;
+            left: 12px;
+            top: 12px;
+            width: 30px;
+            height: 30px;
+            line-height: 20px;
+            font-size: 10px;
+            padding: 0px;
+        }
+        #zoomButtonPlus { left: 42px; }
+    </style>
+</head>
+<body>
+    <button id="zoomButtonMinus">➖</button>
+    <button id="zoomButtonPlus">➕</button>
+    <div id="screen">
+        <div id="sonic"></div>
+    </div>
+    <div id="fps"></div>
+    <script src="game.js" type="module"></script>
+</body>
+</html>
