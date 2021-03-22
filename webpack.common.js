@@ -18,10 +18,5 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, "public"),
         filename: "game.js",
-    },
-    devServer: {
-        contentBase: path.join(__dirname, "public"),
-        compress: true,
-        port: 8080
     }
 };
