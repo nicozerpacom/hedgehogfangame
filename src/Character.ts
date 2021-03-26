@@ -1,20 +1,25 @@
+import Point from "./Point"
+import Speed from "./Speed"
+
 type CharacterSettings = {
     acceleration: number,
     decceleration: number,
     friction: number,
     topSpeed: number
+    gravity: number,
+    sprites: CharacterSprite[]
 }
-type Coords = [number, number]
 
 export enum SpriteType {
     Idle = 0,
     Walking,
     Running,
-    Breaking
+    Skidding
 }
 
 export enum MoveType {
-    Walk = 0
+    Walk = 0,
+    Skid
 }
 
 export enum Direction {
@@ -22,24 +27,41 @@ export enum Direction {
     Right
 }
 
+export type CharacterSprite = {
+    type : SpriteType,
+    fileName: string,
+    frames: CharacterSpriteFrame[]
+}
+export type CharacterSpriteFrame = {
+    width: number,
+    height: number,
+    imageOffset: Point,
+    hitbox: [Point, Point]
+}
+
 export default class Character {
-    #settings: CharacterSettings
-    #position: Coords
-    #spriteType: SpriteType
-    #direction: Direction
-    #currentSpeed: number
-    #lastMoveType: MoveType
-    #lastMoveDirection: Direction
+    #settings : CharacterSettings
+    #position : Point
+    #spriteType : SpriteType
+    #direction : Direction
+    #currentSpeed : Speed
+    #lastMoveType : MoveType
+    #lastMoveDirection : Direction
+    
+    #nextSpriteCounter : number
+    #shouldChangeSprite : boolean
 
     constructor(settings: CharacterSettings) {
         this.#settings = settings
-        this.#position = [24, 206] //[24, 216]
-        this.#currentSpeed = 0
+        this.#position = new Point(24, 200) //[24, 216]
+        this.#currentSpeed = new Speed()
         this.#spriteType = SpriteType.Idle
         this.#direction = Direction.Right
+        this.#nextSpriteCounter = 0
+        this.#shouldChangeSprite = false
     }
 
-    getPosition() : Coords {
+    getPosition() : Point {
         return this.#position
     }
     getSpriteType() : SpriteType {
@@ -48,34 +70,71 @@ export default class Character {
     getDirection() : Direction {
         return this.#direction
     }
+    
+    getShouldChangeSprite() : boolean {
+        return this.#shouldChangeSprite
+    }
 
     move(moveType ?: MoveType, direction ?: Direction) {
         this.#lastMoveType = moveType
         this.#lastMoveDirection = direction
     }
 
+    private updateSprite() : void {
+        const currentSpeed = this.#currentSpeed.getAbsolute()
+        const previousSpeed = this.#currentSpeed.getPreviousAbsolute()
+
+        const isAccelerating = currentSpeed > previousSpeed
+
+        if (currentSpeed > 0) {
+
+            if (this.#lastMoveType == MoveType.Skid) {
+                this.#spriteType = SpriteType.Skidding
+            } else if (
+                (isAccelerating && currentSpeed < this.#settings.topSpeed) ||
+                (!isAccelerating && currentSpeed < this.#settings.topSpeed * 0.80)
+            ) {
+                this.#spriteType = SpriteType.Walking
+            } else {
+                this.#spriteType = SpriteType.Running
+            }
+        }
+
+
+        if (currentSpeed > 0) {
+            const animationDuration = Math.floor(Math.max(0, 8 - currentSpeed))
+            
+            if (this.#nextSpriteCounter == 0) {
+                this.#nextSpriteCounter = animationDuration
+                this.#shouldChangeSprite = true
+            } else {
+                this.#nextSpriteCounter--
+                this.#shouldChangeSprite = false
+            }
+        }
+
+        if (currentSpeed == 0) {
+            this.#spriteType = SpriteType.Idle
+        }
+    }
+
     updateMovement() {
-        let currentSpeed = Math.abs(this.#currentSpeed)
+        let currentSpeed = Math.abs(this.#currentSpeed.getAbsolute())
         let nextDirection = this.#lastMoveDirection
 
         switch (this.#lastMoveType) {
             case MoveType.Walk:
+            case MoveType.Skid:
 
                 if (this.#direction != this.#lastMoveDirection) {
                     currentSpeed = currentSpeed - this.#settings.decceleration
                     
                     if (currentSpeed < 0) {
                         currentSpeed = Math.abs(currentSpeed)
-                        this.#spriteType = SpriteType.Walking
+                        this.#lastMoveType = MoveType.Walk
                     } else {
                         nextDirection = null
-
-                        if (currentSpeed <= this.#settings.topSpeed * 0.50 && this.#spriteType != SpriteType.Breaking) {
-                            this.#spriteType = SpriteType.Walking
-                        } else {
-                            this.#spriteType = SpriteType.Breaking
-                            
-                        }
+                        this.#lastMoveType = MoveType.Skid
                     }
                 } else {
                     currentSpeed = Math.min(
@@ -92,15 +151,6 @@ export default class Character {
                 )
         }
 
-        
-        if (this.#spriteType != SpriteType.Breaking) {
-            if (currentSpeed >= this.#settings.topSpeed * 0.75) {
-                this.#spriteType = SpriteType.Running
-            } else {
-                this.#spriteType = SpriteType.Walking
-            }
-        }
-
         if (nextDirection == Direction.Left) {
             this.#direction = Direction.Left
         } else if (nextDirection == Direction.Right) {
@@ -108,21 +158,25 @@ export default class Character {
         }
 
         if (this.#direction == Direction.Left) {
-            this.#currentSpeed = -currentSpeed
+            this.#currentSpeed.set(-currentSpeed)
         } else {
-            this.#currentSpeed = currentSpeed
+            this.#currentSpeed.set(currentSpeed)
         }
 
-        if (this.#currentSpeed != 0) {
-            this.#position = [
-                this.#position[0] + this.#currentSpeed,
-                this.#position[1]
-            ]
+        if (this.#currentSpeed.get() != 0) {
+            this.#position.set(
+                this.#position.x + this.#currentSpeed.get(),
+                this.#position.y
+            )
         }
 
-        if (this.#currentSpeed == 0) {
-            this.#spriteType = SpriteType.Idle
-        }
+        this.updateSprite()
+    }
+
+    getSprite() : CharacterSprite {
+        return this.#settings.sprites.find(
+            (item : CharacterSprite) : boolean => item.type == this.#spriteType
+        )
     }
 }
 

@@ -8,40 +8,28 @@
     <link rel="preload" as="image" type="image/webp" href="/sprites/sonicIdle.webp">
     <link rel="preload" as="image" type="image/webp" href="/sprites/sonicWalking.webp">
     <link rel="preload" as="image" type="image/webp" href="/sprites/sonicRunning.webp">
-    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicBreaking.webp">
+    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicSkidding.webp">
 
     <style>
         :root { background-color: hsl(0, 0%, 80%); }
+        body { transform-origin: top left; }
         #screen {
             height: 250px /*240px*/;
-            background-color: hsl(0, 0%, 100%);
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            width: calc(100% - 24px);
+            background-color: #224400;
+            position: relative;
             overflow: auto;
-            transform-origin: top left;
             image-rendering: pixelated;
+            overflow-y: hidden;
         }
         #sonic {
-            width: 48px;
-            height: 48px;
             image-rendering: pixelated;
-            background-image: url("/sprites/sonicIdle.webp");
             position: absolute;
-            transform: translate(-24px, -24px);
+            z-index: 3;
         }
-        #sonic.isWalking {
-            background-image: url("/sprites/sonicWalking.webp");
-        }
-        #sonic.isRunning {
-            background-image: url("/sprites/sonicRunning.webp");
-        }
-        #sonic.isBreaking {
-            background-image: url("/sprites/sonicBreaking.webp");
-        }
-        #sonic.isLeft {
-            transform: translate(-24px, -24px) rotateY(180deg);
+        .hitbox {
+            box-sizing: border-box;
+            position: absolute;
+            border: 1px solid hsla(170, 100%, 60%, 0.5)
         }
         #zoomButtonPlus, #zoomButtonMinus {
             position: absolute;
@@ -55,13 +43,26 @@
             padding: 0px;
         }
         #zoomButtonPlus { left: 42px; }
+
+        #floor {
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            bottom: -35.5px;
+            background-image: url("/sprites/floor.webp");
+            height: 71px;
+            z-index: 4;
+        }
     </style>
 </head>
 <body>
     <button id="zoomButtonMinus">➖</button>
     <button id="zoomButtonPlus">➕</button>
     <div id="screen">
-        <div id="sonic"></div>
+        <div id="sonic">
+            <div class="hitbox"></div>
+        </div>
+        <div id="floor"></div>
     </div>
     <div id="fps"></div>
     <script src="game.js" type="module"></script>
