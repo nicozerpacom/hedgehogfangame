@@ -69,6 +69,7 @@ function reqAnimFrame() {
     
     if (keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length > 0) {
         movements.push([MoveType.Jump, null])
+        jumpAudio.play()
         sonicMoved = true
     }
     
@@ -149,7 +150,42 @@ window.addEventListener("keypress", function(event: KeyboardEvent) {
 })
 
 function updateZoom() : void {
-    const screen : HTMLElement = document.body; //("#screen")
+    const screen : HTMLElement = document.body;
     screen.style.transform = `scale(${zoom}, ${zoom})`
     screen.style.width = `calc(${(100 / zoom)}% - ${24 / zoom}px)`
 }
+
+const levelAudioContext = new AudioContext()
+
+fetch("/sounds/angelisland1.ogg", { mode: "cors" })
+    .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
+    .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
+
+
+let srcNode : AudioBufferSourceNode
+let audioData : AudioBuffer
+function initPlayLoop(buffer : AudioBuffer) : void {
+    if (!audioData) {
+        audioData = buffer
+    }
+    srcNode = levelAudioContext.createBufferSource()
+    srcNode.buffer = buffer
+    srcNode.connect(levelAudioContext.destination)
+    srcNode.loop = true
+    
+    playLoop()
+}
+  
+function playLoop() {
+    if (levelAudioContext.state == "running") {
+        srcNode.start()
+    } else {
+        setTimeout(function() {
+            levelAudioContext.resume()
+            playLoop()
+        }, 500)
+    }
+}
+
+const jumpAudio = new Audio("/sounds/jump.ogg")
+jumpAudio.volume = 0.35
