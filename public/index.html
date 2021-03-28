@@ -5,16 +5,13 @@
     <title>HTML Sonic 3</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicIdle.webp">
-    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicWalking.webp">
-    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicRunning.webp">
-    <link rel="preload" as="image" type="image/webp" href="/sprites/sonicSkidding.webp">
+    <link rel="preload" as="image" type="image/webp" href="/sprites/sonic.webp">
 
     <style>
         :root { background-color: hsl(0, 0%, 80%); }
         body { transform-origin: top left; }
         #screen {
-            height: 250px /*240px*/;
+            height: 320px /*240px*/;
             background-color: #224400;
             position: relative;
             overflow: auto;
@@ -29,7 +26,9 @@
         .hitbox {
             box-sizing: border-box;
             position: absolute;
-            border: 1px solid hsla(170, 100%, 60%, 0.5)
+            border: 1px solid hsla(170, 100%, 60%, 0.5);
+            display: none;
+            z-index: 10
         }
         #zoomButtonPlus, #zoomButtonMinus {
             position: absolute;
@@ -45,13 +44,13 @@
         #zoomButtonPlus { left: 42px; }
 
         #floor {
+            box-sizing: border-box;
             position: absolute;
-            left: 0px;
-            right: 0px;
-            bottom: -35.5px;
             background-image: url("/sprites/floor.webp");
-            height: 71px;
             z-index: 4;
+        }
+        #jumpAudio {
+            visibility: hidden;
         }
     </style>
 </head>
@@ -63,8 +62,10 @@
             <div class="hitbox"></div>
         </div>
         <div id="floor"></div>
+        <div id="floorHitbox" class="hitbox"></div>
     </div>
     <div id="fps"></div>
+    <audio id="jumpAudio" src="/sounds/jump.ogg"></audio>
     <script src="game.js" type="module"></script>
 </body>
 </html>

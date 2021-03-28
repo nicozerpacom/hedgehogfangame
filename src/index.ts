@@ -1,81 +1,99 @@
 import createSonic from "./Characters/Sonic"
-import { SpriteType, MoveType, Direction } from "./Character"
+import Point, { Rect } from "./Point"
+import { MoveType, Direction } from "./Character"
+import Platform from "./Platform"
+import { AllHitboxes } from "./SolidObjects"
+
+
+const allHitboxes : AllHitboxes = []
 
 const sonicDiv : HTMLDivElement = document.querySelector("#sonic")
 const sonicHitbox : HTMLDivElement = sonicDiv.querySelector(".hitbox")
-let sonic = createSonic()
+
+const floorDiv : HTMLDivElement = document.querySelector("#floor")
+const floorHitbox : HTMLDivElement = document.querySelector("#floorHitbox")
 
 
-let keyBeingPressed : string = "";
+const floor = new Platform(
+    new Point(800, 260),
+    Rect.create(-800, -35, 800, 35),
+    Rect.create(-800, -25, 800, 35)
+)
+const sonic = createSonic(new Point(30, 201), allHitboxes)
+
+allHitboxes.push(sonic)
+allHitboxes.push(floor)
+
+let keysBeingPressed : string[] = [];
 window.addEventListener("keydown", function(event: KeyboardEvent) {
-    if (event.key == "ArrowRight" && keyBeingPressed != event.key) {
-        keyBeingPressed = event.key;
-        sonic.move(
-            MoveType.Walk,
-            Direction.Right
-        )
+    const key = String(event.key).toUpperCase()
+
+    if (key == "ARROWRIGHT" && !keysBeingPressed.includes(key)) {
+        keysBeingPressed.push(key);
     }
 
-    if (event.key == "ArrowLeft" && keyBeingPressed != event.key) {
-        keyBeingPressed = event.key;
-        sonic.move(
-            MoveType.Walk,
-            Direction.Left
-        )
+    if (key == "ARROWLEFT" && !keysBeingPressed.includes(key)) {
+        keysBeingPressed.push(key);
     }
-});
 
-window.addEventListener("keyup", function() {
-    if (keyBeingPressed) {
-        keyBeingPressed = "";
-        sonic.move()
+    if (
+        ["A", "S", "D"].includes(key)
+        && keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length == 0
+    ) {
+        keysBeingPressed.push(key)
     }
 });
 
-let lelele : any
+window.addEventListener("keyup", function(event : KeyboardEvent) {
+    const key = String(event.key).toUpperCase()
+    const keyIndex = keysBeingPressed.indexOf(key)
+
+    if (keyIndex != -1) {
+        keysBeingPressed.splice(keyIndex, 1)
+    }
+});
+
 function reqAnimFrame() {
 
-    sonic.updateMovement()
+    let sonicMoved = false
 
-    sonicDiv.style.left = `${sonic.getPosition().x}px`
-    sonicDiv.style.top = `${sonic.getPosition().y}px`
+    const movements : Array<[MoveType, Direction]> = []
+    if (keysBeingPressed.includes("ARROWLEFT")) {
+
+        movements.push([MoveType.Walk, Direction.Left])
+        sonicMoved = true
+    } else if (keysBeingPressed.includes("ARROWRIGHT")) {
+        movements.push([MoveType.Walk, Direction.Right])
+        sonicMoved = true
+    }
+    
+    if (keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length > 0) {
+        movements.push([MoveType.Jump, null])
+        sonicMoved = true
+    }
+    
+    if (!sonicMoved) {
+        movements.push([MoveType.None, null])
+    }
+
+    sonic.move(movements)
+
+    sonic.updateMovement()
 
     const sprite = sonic.getSprite()
     sonicDiv.style.backgroundImage = `url("/sprites/${sprite.fileName}.webp")`
 
-    const spriteTypeChanged = sonicDiv.dataset.spriteType != String(sprite.type)
-    sonicDiv.dataset.spriteType = String(sprite.type)
+    const currentFrame = sprite.frames[sonic.getSpriteFrameIndex()]
 
-    
-    let frameIndex = 0
-    if (sprite.frames.length > 1) {
-        
-        if (!spriteTypeChanged) {
-            frameIndex = parseInt(sonicDiv.dataset.frameIndex || "0")
+    const rect = currentFrame.getRect(sonic.getPosition())
 
-            if (sonic.getShouldChangeSprite()) {
-                frameIndex++
-                if (frameIndex >= sprite.frames.length) {
-                    frameIndex = 0
-                }
-                sonicDiv.dataset.frameIndex = String(frameIndex)
-            }
-        }
-    }
-    
-    if (spriteTypeChanged) {
-        sonicDiv.dataset.frameIndex = "0"
-    }
-    
-
-    const currentFrame = sprite.frames[frameIndex]
+    sonicDiv.style.left = `${rect.leftTop.x}px`
+    sonicDiv.style.top = `${rect.leftTop.y}px`
 
     sonicDiv.style.width = `${currentFrame.width}px`
     sonicDiv.style.height = `${currentFrame.height}px`
-    sonicDiv.style.transform = `translate(-${currentFrame.width / 2}px, -${currentFrame.height / 2}px)`
     sonicDiv.style.backgroundPosition = `-${currentFrame.imageOffset.x}px -${currentFrame.imageOffset.y}px`
 
-    
     sonicHitbox.style.left = "50%"
     sonicHitbox.style.top = "50%"
     sonicHitbox.style.transform = `translate(${currentFrame.hitbox[0].x}px, ${currentFrame.hitbox[0].y}px)`
@@ -83,9 +101,22 @@ function reqAnimFrame() {
     sonicHitbox.style.height = `${Math.abs(currentFrame.hitbox[0].y) + Math.abs(currentFrame.hitbox[1].y)}px`
     
     if (sonic.getDirection() == Direction.Left) {
-        sonicDiv.style.transform += ` rotateY(180deg)`
+        sonicDiv.style.transform = "rotateY(180deg)"
+    } else {
+        sonicDiv.style.transform = ""
     }
 
+    floorDiv.style.left = `${floor.getPositionleftTop().x}px`
+    floorDiv.style.top = `${floor.getPositionleftTop().y}px`
+    floorDiv.style.width = `${floor.rect.getWidth()}px`
+    floorDiv.style.height = `${floor.rect.getHeight()}px`
+
+    floorHitbox.style.left = `${floor.getHitbox().getLeft()}px`
+    floorHitbox.style.top = `${floor.getHitbox().getTop()}px`
+    floorHitbox.style.width = `${floor.getHitbox().getWidth()}px`
+    floorHitbox.style.height = `${floor.getHitbox().getHeight()}px`
+
+    // console.log(sonic.findCollisions())
     
     window.requestAnimationFrame(reqAnimFrame)
     return 1
@@ -104,13 +135,17 @@ document.querySelector("#zoomButtonMinus").addEventListener("click", function() 
 
 
 window.addEventListener("keypress", function(event: KeyboardEvent) {
-    if (event.key == "+") {
-        zoom *= 1.5
-        updateZoom()
-    } else if (event.key == "-") {
-        zoom /= 1.5
-        updateZoom()
+    switch (String(event.key).toUpperCase()) {
+        case "+":
+            zoom *= 1.5
+            updateZoom()
+            break
+        case "-":
+            zoom /= 1.5
+            updateZoom()
+            break
     }
+    
 })
 
 function updateZoom() : void {

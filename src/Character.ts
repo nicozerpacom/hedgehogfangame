@@ -1,5 +1,7 @@
-import Point from "./Point"
+import Point, { Rect } from "./Point"
+import { SolidObjectFrame, HasHitbox, AllHitboxes, checkCollision, CheckCollisionInfo } from "./SolidObjects"
 import Speed from "./Speed"
+import * as _ from "lodash"
 
 type CharacterSettings = {
     acceleration: number,
@@ -7,6 +9,7 @@ type CharacterSettings = {
     friction: number,
     topSpeed: number
     gravity: number,
+    jumpSpeed : number,
     sprites: CharacterSprite[]
 }
 
@@ -14,12 +17,16 @@ export enum SpriteType {
     Idle = 0,
     Walking,
     Running,
-    Skidding
+    Skidding,
+    Jumping
 }
 
 export enum MoveType {
-    Walk = 0,
-    Skid
+    None = 0,
+    Walk,
+    Skid,
+    Jump,
+    JumpPassive
 }
 
 export enum Direction {
@@ -30,35 +37,56 @@ export enum Direction {
 export type CharacterSprite = {
     type : SpriteType,
     fileName: string,
-    frames: CharacterSpriteFrame[]
-}
-export type CharacterSpriteFrame = {
-    width: number,
-    height: number,
-    imageOffset: Point,
-    hitbox: [Point, Point]
+    frames: SolidObjectFrame[]
 }
 
-export default class Character {
+export default class Character implements HasHitbox {
     #settings : CharacterSettings
     #position : Point
     #spriteType : SpriteType
     #direction : Direction
-    #currentSpeed : Speed
-    #lastMoveType : MoveType
-    #lastMoveDirection : Direction
-    
+    #currentSpeedX : Speed
+    #currentSpeedY : Speed
+    #lastMovesTypes : Array<[MoveType, Direction]>
+    #spriteFrameIndex : number
     #nextSpriteCounter : number
-    #shouldChangeSprite : boolean
+    #isJumping : boolean = false
 
-    constructor(settings: CharacterSettings) {
+    #hitboxID = `sonic${Math.round(Math.random() * 100000)}`
+
+    constructor(
+        settings: CharacterSettings,
+        position : Point,
+        protected hitboxes : AllHitboxes = []
+    ) {
         this.#settings = settings
-        this.#position = new Point(24, 200) //[24, 216]
-        this.#currentSpeed = new Speed()
+        this.#position = position
+        this.#currentSpeedX = new Speed()
+        this.#currentSpeedY = new Speed()
         this.#spriteType = SpriteType.Idle
         this.#direction = Direction.Right
         this.#nextSpriteCounter = 0
-        this.#shouldChangeSprite = false
+        this.#spriteFrameIndex = 0
+    }
+
+    getHitboxID = () : string => this.#hitboxID
+
+    getHitbox() : Rect {
+
+        let indexA = 0
+        let indexB = 1
+
+        if (this.#direction == Direction.Left) {
+            indexA = 1
+            indexB = 0
+        }
+
+        return Rect.create(
+            this.#position.x - Math.abs(this.getSpriteFrame().hitbox[indexA].x),
+            this.#position.y - Math.abs(this.getSpriteFrame().hitbox[0].y),
+            this.#position.x + Math.abs(this.getSpriteFrame().hitbox[indexB].x),
+            this.#position.y + Math.abs(this.getSpriteFrame().hitbox[1].y)
+        )
     }
 
     getPosition() : Point {
@@ -70,29 +98,46 @@ export default class Character {
     getDirection() : Direction {
         return this.#direction
     }
-    
-    getShouldChangeSprite() : boolean {
-        return this.#shouldChangeSprite
+
+    move(moveTypes : Array<[MoveType, Direction]>) {
+        this.#lastMovesTypes = moveTypes
     }
 
-    move(moveType ?: MoveType, direction ?: Direction) {
-        this.#lastMoveType = moveType
-        this.#lastMoveDirection = direction
+    private getNextFrame(animationDuration : number) : void {
+        if (this.#nextSpriteCounter == 0) {
+            this.#nextSpriteCounter = animationDuration
+            
+            this.#spriteFrameIndex++
+
+            if (this.#spriteFrameIndex >= this.getSprite().frames.length) {
+                this.#spriteFrameIndex = 0
+            }
+        } else {
+            this.#nextSpriteCounter--
+        }
     }
 
     private updateSprite() : void {
-        const currentSpeed = this.#currentSpeed.getAbsolute()
-        const previousSpeed = this.#currentSpeed.getPreviousAbsolute()
+        const currentSpeedX = this.#currentSpeedX.getAbsolute()
+        const previousSpeedX = this.#currentSpeedX.getPreviousAbsolute()
 
-        const isAccelerating = currentSpeed > previousSpeed
+        const currentSpeedY = this.#currentSpeedY.getAbsolute()
 
-        if (currentSpeed > 0) {
+        const isAcceleratingX = currentSpeedX > previousSpeedX
 
-            if (this.#lastMoveType == MoveType.Skid) {
+        const oldSpriteType = this.#spriteType
+
+        const moveTypesOnly = this.#lastMovesTypes.map((item) : MoveType => item[0])
+
+        if (_.intersection(moveTypesOnly, [MoveType.JumpPassive, MoveType.Jump]).length > 0) {
+            this.#spriteType = SpriteType.Jumping
+        } else if (currentSpeedX > 0 && this.#spriteType != SpriteType.Jumping) {
+
+            if (moveTypesOnly.includes(MoveType.Skid)) {
                 this.#spriteType = SpriteType.Skidding
             } else if (
-                (isAccelerating && currentSpeed < this.#settings.topSpeed) ||
-                (!isAccelerating && currentSpeed < this.#settings.topSpeed * 0.80)
+                (isAcceleratingX && currentSpeedX < this.#settings.topSpeed) ||
+                (!isAcceleratingX && currentSpeedX < this.#settings.topSpeed * 0.80)
             ) {
                 this.#spriteType = SpriteType.Walking
             } else {
@@ -100,55 +145,86 @@ export default class Character {
             }
         }
 
-
-        if (currentSpeed > 0) {
-            const animationDuration = Math.floor(Math.max(0, 8 - currentSpeed))
-            
-            if (this.#nextSpriteCounter == 0) {
-                this.#nextSpriteCounter = animationDuration
-                this.#shouldChangeSprite = true
-            } else {
-                this.#nextSpriteCounter--
-                this.#shouldChangeSprite = false
-            }
+        if (this.#spriteType != oldSpriteType) {
+            this.#spriteFrameIndex = 0
+            this.#nextSpriteCounter = 0
         }
 
-        if (currentSpeed == 0) {
-            this.#spriteType = SpriteType.Idle
+
+        if (this.#spriteType == SpriteType.Jumping && currentSpeedY != 0) {
+            const animationDuration = 4
+            this.getNextFrame(animationDuration)
+
+        } else {
+
+            if (this.#spriteType == SpriteType.Jumping) {
+                this.#spriteType = SpriteType.Walking
+            }
+
+            if (currentSpeedX > 0) {
+                const animationDuration = Math.floor(Math.max(0, 8 - currentSpeedX))
+                this.getNextFrame(animationDuration)
+            }
+
+            if (currentSpeedX == 0) {
+                this.#spriteType = SpriteType.Idle
+                this.#spriteFrameIndex = 0
+            }
         }
     }
 
+    getSpriteFrameIndex() : number {
+        return this.#spriteFrameIndex
+    }
+
     updateMovement() {
-        let currentSpeed = Math.abs(this.#currentSpeed.getAbsolute())
-        let nextDirection = this.#lastMoveDirection
+        let currentSpeedX = Math.abs(this.#currentSpeedX.getAbsolute())
 
-        switch (this.#lastMoveType) {
-            case MoveType.Walk:
-            case MoveType.Skid:
+        let nextDirection = null
 
-                if (this.#direction != this.#lastMoveDirection) {
-                    currentSpeed = currentSpeed - this.#settings.decceleration
-                    
-                    if (currentSpeed < 0) {
-                        currentSpeed = Math.abs(currentSpeed)
-                        this.#lastMoveType = MoveType.Walk
-                    } else {
-                        nextDirection = null
-                        this.#lastMoveType = MoveType.Skid
-                    }
+        const lastMovementWithDirection = _.findLast(this.#lastMovesTypes, item => item[1] !== null)
+        if (lastMovementWithDirection) {
+            nextDirection = lastMovementWithDirection[1]
+        }
+        
+        let alreadyMoved = false
+
+        const moveTypesOnly = this.#lastMovesTypes.map((item) : MoveType => item[0])
+
+        if (moveTypesOnly.includes(MoveType.Jump)) {
+            if (!this.#isJumping) {
+                this.#currentSpeedY.set(this.#currentSpeedY.get() - this.#settings.jumpSpeed)
+                this.#isJumping = true
+            }
+            alreadyMoved = true
+        }
+
+        if (_.intersection(moveTypesOnly, [MoveType.Walk, MoveType.Skid]).length > 0) {
+            if (this.#direction != nextDirection) {
+                currentSpeedX = currentSpeedX - this.#settings.decceleration
+                
+                if (currentSpeedX < 0) {
+                    currentSpeedX = Math.abs(currentSpeedX)
+                    this.#lastMovesTypes = [[MoveType.Walk, nextDirection]]
                 } else {
-                    currentSpeed = Math.min(
-                        currentSpeed + this.#settings.acceleration,
-                        this.#settings.topSpeed
-                    )
+                    nextDirection = null
+                    this.#lastMovesTypes = [[MoveType.Skid, nextDirection]]
                 }
-                break
-
-            default:
-                currentSpeed = Math.max(
-                    0,
-                    currentSpeed - this.#settings.friction
+            } else {
+                currentSpeedX = Math.min(
+                    currentSpeedX + this.#settings.acceleration,
+                    this.#settings.topSpeed
                 )
+            }
+
+            alreadyMoved = true
+        }
+
+        if (!alreadyMoved) {
+            if (this.#isJumping) {
+                this.#currentSpeedY.set(Math.max(-4, this.#currentSpeedY.get()))
+            }
+            currentSpeedX = Math.max(0, currentSpeedX - this.#settings.friction)
         }
 
         if (nextDirection == Direction.Left) {
@@ -158,16 +234,40 @@ export default class Character {
         }
 
         if (this.#direction == Direction.Left) {
-            this.#currentSpeed.set(-currentSpeed)
+            this.#currentSpeedX.set(-currentSpeedX)
         } else {
-            this.#currentSpeed.set(currentSpeed)
+            this.#currentSpeedX.set(currentSpeedX)
         }
 
-        if (this.#currentSpeed.get() != 0) {
+        if (this.#currentSpeedX.get() != 0) {
             this.#position.set(
-                this.#position.x + this.#currentSpeed.get(),
+                this.#position.x + this.#currentSpeedX.get(),
                 this.#position.y
             )
+        }
+
+        
+        this.#currentSpeedY.set(this.#currentSpeedY.get() + this.#settings.gravity)
+
+        this.#position.set(
+            this.#position.x,
+            this.#position.y + this.#currentSpeedY.get()
+        )
+        
+        const collisionsY = this
+            .findCollisions()
+            .filter(item => item.offsetY != 0)
+
+        if (collisionsY.length > 0) {
+            this.#position.set(
+                this.#position.x,
+                this.#position.y - Math.abs(collisionsY[0].offsetY)
+            )
+            this.#currentSpeedY.set(0)
+
+            if (this.#isJumping) {
+                this.#isJumping = false
+            }
         }
 
         this.updateSprite()
@@ -177,6 +277,16 @@ export default class Character {
         return this.#settings.sprites.find(
             (item : CharacterSprite) : boolean => item.type == this.#spriteType
         )
+    }
+    getSpriteFrame() : SolidObjectFrame {
+        return this.getSprite().frames[this.getSpriteFrameIndex()]
+    }
+
+    findCollisions(offset ?: Point) : CheckCollisionInfo[] {
+        return this.hitboxes
+            .filter(item => item.getHitboxID() != this.getHitboxID())
+            .map(item => checkCollision(this, item, offset))
+            .filter(item => item.collision)
     }
 }
 
