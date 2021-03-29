@@ -8,6 +8,6 @@ module.exports = merge(common, {
     devServer: {
         contentBase: path.join(__dirname, "public"),
         compress: true,
-        port: 8080
+        port: 8001
     }
 });
