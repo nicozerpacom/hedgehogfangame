@@ -3,13 +3,13 @@ body { transform-origin: top left; }
 #screen {
     height: 240px;
     width: 426.67px;
-    background-color: #224400;
+    background-color: hsl(0, 0, 15%);
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="10" height="10" style="fill:rgba(0,0,0,0.1)"/><rect x="10" y="10" width="10" height="10" style="fill:rgba(0,0,0,0.1)"/></svg>');
     position: absolute;
     left: 50%;
     top: 50%;
     margin-top: -120px;
     margin-left: -213.34px;
-    overflow: auto;
     image-rendering: pixelated;
     overflow: hidden;
 }
@@ -21,7 +21,7 @@ body { transform-origin: top left; }
 .hitbox {
     box-sizing: border-box;
     position: absolute;
-    border: 1px solid hsla(170, 100%, 60%, 0.5);
+    background-color: hsla(170, 100%, 60%, 0.5);
     display: none;
     z-index: 10
 }
@@ -30,7 +30,7 @@ body { transform-origin: top left; }
 #floor {
     box-sizing: border-box;
     position: absolute;
-    background-image: url("../Assets/sprites/floor.webp");
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"><rect width="15" height="15" style="stroke-width:2;stroke:rgb(0,200,0);fill:rgba(0,0,0,0)"/><line x1="1" y1="1" x2="14" y2="14" style="stroke:rgb(0,90,0);stroke-width:1" /><line x1="14" y1="1" x2="1" y2="14" style="stroke:rgb(0,90,0);stroke-width:1" /></svg>');
     z-index: 4;
 }
 #jumpAudio {

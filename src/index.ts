@@ -6,8 +6,11 @@ import { MoveType, Direction } from "./Character"
 import Platform from "./Platform"
 import { AllHitboxes } from "./SolidObjects"
 
+const playSounds = false
 
 const allHitboxes : AllHitboxes = []
+
+const screenDiv : HTMLDivElement = document.querySelector("#screen")
 
 const sonicDiv : HTMLDivElement = document.querySelector("#sonic")
 const sonicHitbox : HTMLDivElement = sonicDiv.querySelector(".hitbox")
@@ -19,7 +22,7 @@ const floorHitbox : HTMLDivElement = document.querySelector("#floorHitbox")
 const floor = new Platform(
     new Point(800, 210),
     Rect.create(-800, -35, 800, 35),
-    Rect.create(-800, -25, 800, 35)
+    Rect.create(-800, -35, 800, 35)
 )
 const sonic = createSonic(new Point(30, 200), allHitboxes)
 
@@ -30,19 +33,39 @@ let keysBeingPressed : string[] = [];
 window.addEventListener("keydown", function(event: KeyboardEvent) {
     const key = String(event.key).toUpperCase()
 
-    if (key == "ARROWRIGHT" && !keysBeingPressed.includes(key)) {
-        keysBeingPressed.push(key);
-    }
+    if (event.ctrlKey) {
+        console.log(key)
+        if (key == "ARROWRIGHT") {
+            screenDiv.scrollLeft += 5
+            event.preventDefault()
+        } else if (key == "ARROWLEFT") {
+            screenDiv.scrollLeft -= 5
+            event.preventDefault()
+        } else if (key == "ARROWUP") {
+            screenDiv.scrollTop -= 5
+            event.preventDefault()
+        } else if (key == "ARROWDOWN") {
+            screenDiv.scrollTop += 5
+            event.preventDefault()
+        }
+    } else {
+        if (key == "ARROWRIGHT" && !keysBeingPressed.includes(key)) {
+            keysBeingPressed.push(key);
+            event.preventDefault()
+        }
 
-    if (key == "ARROWLEFT" && !keysBeingPressed.includes(key)) {
-        keysBeingPressed.push(key);
-    }
+        if (key == "ARROWLEFT" && !keysBeingPressed.includes(key)) {
+            keysBeingPressed.push(key);
+            event.preventDefault()
+        }
 
-    if (
-        ["A", "S", "D"].includes(key)
-        && keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length == 0
-    ) {
-        keysBeingPressed.push(key)
+        if (
+            ["A", "S", "D"].includes(key)
+            && keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length == 0
+        ) {
+            keysBeingPressed.push(key)
+            event.preventDefault()
+        }
     }
 });
 
@@ -128,44 +151,45 @@ function reqAnimFrame() {
 }
 window.requestAnimationFrame(reqAnimFrame)
 
-const levelAudioContext = new AudioContext()
-
-import(`./Assets/sounds/${"angelisland1"}.ogg`)
-    .then(asset => fetch(asset.default, { mode: "cors" }))
-    .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
-    .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
-
-
-let srcNode : AudioBufferSourceNode
-let audioData : AudioBuffer
-function initPlayLoop(buffer : AudioBuffer) : void {
-    if (!audioData) {
-        audioData = buffer
-    }
-    srcNode = levelAudioContext.createBufferSource()
-    srcNode.buffer = buffer
-    srcNode.connect(levelAudioContext.destination)
-    srcNode.loop = true
-    
-    playLoop()
-}
-  
-function playLoop() {
-    if (levelAudioContext.state == "running") {
-        srcNode.start()
-    } else {
-        setTimeout(function() {
-            levelAudioContext.resume()
-            playLoop()
-        }, 500)
-    }
-}
-
 let jumpAudio = null
-import(`./Assets/sounds/${"jump"}.ogg`).then(function(asset) {
-    jumpAudio = new Audio(asset.default)
-    jumpAudio.volume = 0.35
-})
+if (playSounds) {
+    const levelAudioContext = new AudioContext()
+
+    import(`./Assets/sounds/${"angelisland1"}.ogg`)
+        .then(asset => fetch(asset.default, { mode: "cors" }))
+        .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
+        .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
+
+    let srcNode : AudioBufferSourceNode
+    let audioData : AudioBuffer
+    function initPlayLoop(buffer : AudioBuffer) : void {
+        if (!audioData) {
+            audioData = buffer
+        }
+        srcNode = levelAudioContext.createBufferSource()
+        srcNode.buffer = buffer
+        srcNode.connect(levelAudioContext.destination)
+        srcNode.loop = true
+        
+        playLoop()
+    }
+    
+    function playLoop() {
+        if (levelAudioContext.state == "running") {
+            srcNode.start()
+        } else {
+            setTimeout(function() {
+                levelAudioContext.resume()
+                playLoop()
+            }, 500)
+        }
+    }
+
+    import(`./Assets/sounds/${"jump"}.ogg`).then(function(asset) {
+        jumpAudio = new Audio(asset.default)
+        jumpAudio.volume = 0.35
+    })
+}
 
 
 function updateZoom() {
