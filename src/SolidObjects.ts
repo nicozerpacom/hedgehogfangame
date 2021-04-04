@@ -20,7 +20,7 @@ export class SolidObjectFrame {
 
 export interface HasHitbox {
     getHitbox() : Rect
-    getHitboxID() : string
+    getHitboxID() : Symbol
 }
 
 export type AllHitboxes = Array<HasHitbox>

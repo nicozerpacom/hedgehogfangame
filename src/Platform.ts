@@ -3,35 +3,32 @@ import { HasHitbox } from "./SolidObjects"
 
 export default class Platform implements HasHitbox {
 
-    #hitboxID = `platform${Math.round(Math.random() * 100000)}`
+    #hitboxID = Symbol("hitbox")
 
     constructor(
-        public readonly position : Point,
-        public readonly rect : Rect,
-        public readonly hitbox : Rect
+        public readonly center : Point,
+        public readonly dimensions : Point
     ) {}
 
+    static createFromLeftTop(leftTop : Point, dimensions : Point) {
+        return new Platform(
+            new Point(leftTop.x + dimensions.x / 2, leftTop.y + dimensions.y / 2),
+            dimensions
+        )
+    }
+
     getPositionleftTop = () : Point => new Point(
-        this.position.x - this.rect.getWidth() / 2,
-        this.position.y - this.rect.getHeight() / 2
+        this.center.x - this.dimensions.x / 2,
+        this.center.y - this.dimensions.y / 2
     )
 
-    getHitboxID = () : string => this.#hitboxID
+    getHitboxID = () : Symbol => this.#hitboxID
 
-    getHitbox() : Rect {
-        return Rect.create(
-            this.position.x - Math.abs(this.hitbox.getLeft()),
-            this.position.y - Math.abs(this.hitbox.getTop()),
-            this.position.x + Math.abs(this.hitbox.getRight()),
-            this.position.y + Math.abs(this.hitbox.getBottom())
-        )
-    }
-    getRect() : Rect {
-        return Rect.create(
-            this.position.x - Math.abs(this.rect.getLeft()),
-            this.position.y - Math.abs(this.rect.getTop()),
-            this.position.x + Math.abs(this.rect.getRight()),
-            this.position.y + Math.abs(this.rect.getBottom())
-        )
-    }
+    getHitbox = () => Rect.create(
+        this.center.x - this.dimensions.x / 2,
+        this.center.y - this.dimensions.y / 2,
+        this.center.x + this.dimensions.x / 2,
+        this.center.y + this.dimensions.y / 2,
+    )
+    getRect = () => this.getHitbox
 }

@@ -52,7 +52,7 @@ export default class Character implements HasHitbox {
     #nextSpriteCounter : number
     #isJumping : boolean = false
 
-    #hitboxID = `sonic${Math.round(Math.random() * 100000)}`
+    #hitboxID = Symbol("hitbox")
 
     constructor(
         settings: CharacterSettings,
@@ -69,7 +69,7 @@ export default class Character implements HasHitbox {
         this.#spriteFrameIndex = 0
     }
 
-    getHitboxID = () : string => this.#hitboxID
+    getHitboxID = () : Symbol => this.#hitboxID
 
     getHitbox() : Rect {
 

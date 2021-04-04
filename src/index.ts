@@ -7,17 +7,13 @@ import Platform from "./Platform"
 import { AllHitboxes } from "./SolidObjects"
 import * as _ from "lodash"
 
-const playSounds = true
+const playSounds = false
 
 const allHitboxes : AllHitboxes = []
 
 const canvas = document.querySelector("#canvas") as HTMLCanvasElement
 
-const floor = new Platform(
-    new Point(199, 200),
-    Rect.create(-300, -20, 300, 20),
-    Rect.create(-300, -20, 300, 20)
-)
+const floor = Platform.createFromLeftTop(new Point(-181, 180), new Point(600, 45))
 const sonic = createSonic(new Point(199, 155), allHitboxes)
 
 allHitboxes.push(sonic)
@@ -56,7 +52,7 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
 });
 
 
-(async function() {
+(async function() : Promise<void> {
     const sonicImgData = await import(`./Assets/sprites/${sonic.getSpriteImage()}.webp`)    
     const sonicImg = new Image()
     sonicImg.src = sonicImgData.default
@@ -140,16 +136,16 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
         canvasContext.fillRect(
             floor.getPositionleftTop().x,
             floor.getPositionleftTop().y,
-            floor.rect.getWidth(),
-            floor.rect.getHeight()
+            floor.dimensions.x,
+            floor.dimensions.y
         )
 
         canvasContext.fillStyle = 'hsl(0, 0%, 90%)'
-        _.range(0, floor.rect.getWidth(), 10).forEach(function(valueX) {
-            _.range(valueX % 20, floor.rect.getHeight(), 20).forEach(function(valueY) {
+        _.range(0, floor.dimensions.x, 10).forEach(function(valueX) {
+            _.range(valueX % 20, floor.dimensions.y, 20).forEach(function(valueY) {
 
-                const remainderX = floor.rect.getWidth() - valueX
-                const remainderY = floor.rect.getHeight() - valueY
+                const remainderX = floor.dimensions.x - valueX
+                const remainderY = floor.dimensions.y - valueY
 
                 canvasContext.fillRect(
                     floor.getPositionleftTop().x + valueX,
