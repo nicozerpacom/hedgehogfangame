@@ -190,7 +190,7 @@ import * as _ from "lodash"
     if (playSounds) {
         const levelAudioContext = new AudioContext()
 
-        import(`./Assets/sounds/${"angelisland1"}.ogg`)
+        import(`./Assets/sounds/${"azurelake"}.ogg`)
             .then(asset => fetch(asset.default, { mode: "cors" }))
             .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
             .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
@@ -205,7 +205,9 @@ import * as _ from "lodash"
             srcNode.buffer = buffer
             srcNode.connect(levelAudioContext.destination)
             srcNode.loop = true
-            
+            srcNode.loopEnd = buffer.duration
+            srcNode.loopStart = 2.2055
+
             playLoop()
         }
         
