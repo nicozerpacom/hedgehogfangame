@@ -2,6 +2,7 @@ import Point, { Rect } from "./Point"
 import { SolidObjectFrame, HasHitbox, AllHitboxes, checkCollision, CheckCollisionInfo } from "./SolidObjects"
 import Speed from "./Speed"
 import * as _ from "lodash"
+import Platform from "./Platform"
 
 type CharacterSettings = {
     acceleration: number,
@@ -70,7 +71,8 @@ export default class Character implements HasHitbox {
     constructor(
         settings: CharacterSettings,
         position : Point,
-        protected hitboxes : AllHitboxes = []
+        protected hitboxes : AllHitboxes = [],
+        protected platforms : Platform[]
     ) {
         this.#settings = settings
         this.#position = position
@@ -329,10 +331,56 @@ export default class Character implements HasHitbox {
     }
 
     findCollisions(offset ?: Point) : CheckCollisionInfo[] {
-        return this.hitboxes
+
+        const output : CheckCollisionInfo[] = []
+
+        const sensors = this.getSpriteSensors()
+
+        this.platforms.forEach((platform : Platform) => {
+            
+            let bottomCollision : CheckCollisionInfo
+            const posLeftBottoms = platform.getPosYFromX(sensors.leftBottom.x)
+            if (posLeftBottoms.length > 0) {
+                const platformLeftBottom = posLeftBottoms[0]
+
+                if (sensors.leftBottom.y >= platformLeftBottom) {
+                    bottomCollision = {
+                        collision: true,
+                        offsetX: 0,
+                        offsetY: platformLeftBottom - sensors.leftBottom.y
+                    }
+                }
+            }
+
+            const posRightBottoms = platform.getPosYFromX(sensors.rightBottom.x)
+            if (posRightBottoms.length > 0) {
+                const platformRightBottom = posRightBottoms[0]
+
+                if (sensors.leftBottom.y >= platformRightBottom) {
+
+                    if (
+                        !bottomCollision
+                        || bottomCollision && Math.abs(bottomCollision.offsetY) < Math.abs(platformRightBottom - sensors.rightBottom.y)
+                    ) {
+                        bottomCollision = {
+                            collision: true,
+                            offsetX: 0,
+                            offsetY: platformRightBottom - sensors.rightBottom.y
+                        }
+                    }
+                }
+            }
+
+            if (bottomCollision) output.push(bottomCollision)
+        })
+
+        return output
+
+
+        /*return this.hitboxes
             .filter(item => item.getHitboxID() != this.getHitboxID())
             .map(item => checkCollision(this, item, offset))
-            .filter(item => item.collision)
+            .filter(item => item.collision)*/
     }
 }
 

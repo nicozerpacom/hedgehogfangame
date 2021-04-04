@@ -7,52 +7,72 @@ import Platform from "./Platform"
 import { AllHitboxes } from "./SolidObjects"
 import * as _ from "lodash"
 
-const playSounds = false
 
-const allHitboxes : AllHitboxes = []
+(async function() {
+    const playSounds = true
 
-const canvas = document.querySelector("#canvas") as HTMLCanvasElement
+    const allHitboxes : AllHitboxes = []
 
-const floor = Platform.createFromLeftTop(new Point(-181, 180), new Point(600, 45))
-const sonic = createSonic(new Point(199, 155), allHitboxes)
-
-allHitboxes.push(sonic)
-allHitboxes.push(floor)
-
-let keysBeingPressed : string[] = [];
-window.addEventListener("keydown", function(event: KeyboardEvent) {
-    const key = String(event.key).toUpperCase()
-
-    if (key == "ARROWRIGHT" && !keysBeingPressed.includes(key)) {
-        keysBeingPressed.push(key);
-        event.preventDefault()
-    }
-
-    if (key == "ARROWLEFT" && !keysBeingPressed.includes(key)) {
-        keysBeingPressed.push(key);
-        event.preventDefault()
-    }
-
-    if (
-        ["A", "S", "D"].includes(key)
-        && keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length == 0
-    ) {
-        keysBeingPressed.push(key)
-        event.preventDefault()
-    }
-});
-
-window.addEventListener("keyup", function(event : KeyboardEvent) {
-    const key = String(event.key).toUpperCase()
-    const keyIndex = keysBeingPressed.indexOf(key)
-
-    if (keyIndex != -1) {
-        keysBeingPressed.splice(keyIndex, 1)
-    }
-});
+    const canvas = document.querySelector("#canvas") as HTMLCanvasElement
 
 
-(async function() : Promise<void> {
+    const tileData : { default : string } = await import(`./Assets/Tiles/${"testPlatform"}.webp`)
+
+    const floor = Platform.createFromLeftTop(
+        new Point(-350, 120),
+        new Point(1600, 200), 
+        tileData.default,
+        [
+            new Point(0, 83),
+            new Point(481, 83),
+            new Point(481, 41),
+            new Point(577, 41),
+            new Point(698, 0),
+            new Point(1085, 0),
+            new Point(1200, 42),
+            new Point(1600, 42),
+            new Point(1600, 200),
+            new Point(0, 200)
+        ]
+    )
+    const sonic = createSonic(new Point(199, 155), allHitboxes, [floor])
+
+    allHitboxes.push(sonic)
+
+    let keysBeingPressed : string[] = [];
+    window.addEventListener("keydown", function(event: KeyboardEvent) {
+        const key = String(event.key).toUpperCase()
+
+        if (key == "ARROWRIGHT" && !keysBeingPressed.includes(key)) {
+            keysBeingPressed.push(key);
+            event.preventDefault()
+        }
+
+        if (key == "ARROWLEFT" && !keysBeingPressed.includes(key)) {
+            keysBeingPressed.push(key);
+            event.preventDefault()
+        }
+
+        if (
+            ["A", "S", "D"].includes(key)
+            && keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length == 0
+        ) {
+            keysBeingPressed.push(key)
+            event.preventDefault()
+        }
+    });
+
+    window.addEventListener("keyup", function(event : KeyboardEvent) {
+        const key = String(event.key).toUpperCase()
+        const keyIndex = keysBeingPressed.indexOf(key)
+
+        if (keyIndex != -1) {
+            keysBeingPressed.splice(keyIndex, 1)
+        }
+    });
+
+
+
     const sonicImgData = await import(`./Assets/sprites/${sonic.getSpriteImage()}.webp`)    
     const sonicImg = new Image()
     sonicImg.src = sonicImgData.default
@@ -61,8 +81,7 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
     canvasContext.imageSmoothingEnabled = false
 
 
-    function reqAnimFrame() {
-
+    async function reqAnimFrame() {
         canvasContext.fillStyle = 'hsl(0, 0%, 10%)'
         canvasContext.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -73,7 +92,22 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
                 canvasContext.fillRect(valueX, valueY, 10, 10)
             })
         })
-        
+
+
+        canvasContext.fillStyle = "hsl(0, 0%, 90%)"
+        canvasContext.beginPath()
+        canvasContext.moveTo(
+            floor.getPositionleftTop().x + floor.points[0].x,
+            floor.getPositionleftTop().y + floor.points[0].y
+        )
+        floor.points.slice(1).forEach(function(point) {
+            canvasContext.lineTo(
+                floor.getPositionleftTop().x + point.x,
+                floor.getPositionleftTop().y + point.y
+            )
+        })
+        canvasContext.fill()
+
 
         let sonicMoved = false
 
@@ -108,32 +142,6 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
         const currentFrame = sprite.frames[sonic.getSpriteFrameIndex()]
         const rect = currentFrame.frame.getRect(sonic.getPosition())
         
-        // Platforms        
-        canvasContext.fillStyle = "hsl(0, 0%, 95%)"
-        canvasContext.fillRect(
-            floor.getPositionleftTop().x,
-            floor.getPositionleftTop().y,
-            floor.dimensions.x,
-            floor.dimensions.y
-        )
-
-        canvasContext.fillStyle = "hsl(0, 0%, 90%)"
-        _.range(0, floor.dimensions.x, 10).forEach(function(valueX) {
-            _.range(valueX % 20, floor.dimensions.y, 20).forEach(function(valueY) {
-
-                const remainderX = floor.dimensions.x - valueX
-                const remainderY = floor.dimensions.y - valueY
-
-                canvasContext.fillRect(
-                    floor.getPositionleftTop().x + valueX,
-                    floor.getPositionleftTop().y + valueY,
-                    Math.min(remainderX, 10),
-                    Math.min(remainderY, 10)
-                )
-
-            })
-        })
-
         // Sonic
         let positionX = rect.getLeft()
         if (sonic.getDirection() == Direction.Left) {
@@ -176,61 +184,60 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
         return 1
     }
     window.requestAnimationFrame(reqAnimFrame)
-})()
-
-let jumpAudio = null
-if (playSounds) {
-    const levelAudioContext = new AudioContext()
-
-    import(`./Assets/sounds/${"angelisland1"}.ogg`)
-        .then(asset => fetch(asset.default, { mode: "cors" }))
-        .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
-        .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
-
-    let srcNode : AudioBufferSourceNode
-    let audioData : AudioBuffer
-    function initPlayLoop(buffer : AudioBuffer) : void {
-        if (!audioData) {
-            audioData = buffer
-        }
-        srcNode = levelAudioContext.createBufferSource()
-        srcNode.buffer = buffer
-        srcNode.connect(levelAudioContext.destination)
-        srcNode.loop = true
-        
-        playLoop()
-    }
     
-    function playLoop() {
-        if (levelAudioContext.state == "running") {
-            srcNode.start()
+
+    let jumpAudio = null
+    if (playSounds) {
+        const levelAudioContext = new AudioContext()
+
+        import(`./Assets/sounds/${"angelisland1"}.ogg`)
+            .then(asset => fetch(asset.default, { mode: "cors" }))
+            .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
+            .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
+
+        let srcNode : AudioBufferSourceNode
+        let audioData : AudioBuffer
+        function initPlayLoop(buffer : AudioBuffer) : void {
+            if (!audioData) {
+                audioData = buffer
+            }
+            srcNode = levelAudioContext.createBufferSource()
+            srcNode.buffer = buffer
+            srcNode.connect(levelAudioContext.destination)
+            srcNode.loop = true
+            
+            playLoop()
+        }
+        
+        function playLoop() {
+            if (levelAudioContext.state == "running") {
+                srcNode.start()
+            } else {
+                setTimeout(function() {
+                    levelAudioContext.resume()
+                    playLoop()
+                }, 500)
+            }
+        }
+
+        import(`./Assets/sounds/${"jump"}.ogg`).then(function(asset) {
+            jumpAudio = new Audio(asset.default)
+            jumpAudio.volume = 0.35
+        })
+    }
+
+
+    function updateZoom() {
+        if (window.innerWidth >= window.innerHeight) {
+            canvas.style.width = `${window.innerHeight * 16 / 9}px`
+            canvas.style.height = `${window.innerHeight}px`
         } else {
-            setTimeout(function() {
-                levelAudioContext.resume()
-                playLoop()
-            }, 500)
+            canvas.style.width = `${window.innerWidth}px`
+            canvas.style.height = `${window.innerWidth * 9 / 16}px`
         }
     }
+    updateZoom()
 
-    import(`./Assets/sounds/${"jump"}.ogg`).then(function(asset) {
-        jumpAudio = new Audio(asset.default)
-        jumpAudio.volume = 0.35
-    })
-}
+    window.addEventListener("resize", updateZoom)
 
-
-function updateZoom() {
-    if (window.innerWidth >= window.innerHeight) {
-        canvas.style.width = `${window.innerHeight * 16 / 9}px`
-        canvas.style.height = `${window.innerHeight}px`
-    } else {
-        canvas.style.width = `${window.innerWidth}px`
-        canvas.style.height = `${window.innerWidth * 9 / 16}px`
-    }
-}
-updateZoom()
-
-window.addEventListener("resize", updateZoom)
-
-
-
+})()

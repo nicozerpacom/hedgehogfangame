@@ -2,9 +2,10 @@ import Character, { CharacterSprite, CharacterSpriteFrame, SpriteType, TileColli
 import { AllHitboxes, SolidObjectFrame } from "../SolidObjects"
 import Point from "../Point"
 import * as _ from "lodash"
+import Platform from "../Platform"
 
 
-export default function createSonic(position : Point, hitboxes ?: AllHitboxes) : Character {
+export default function createSonic(position : Point, hitboxes ?: AllHitboxes, platform ?: Platform[]) : Character {
 
     const defaultHitbox : [Point, Point] = [new Point(-16, -15), new Point(9, 24)]
     const smallHitbox : [Point, Point] = [new Point(-16, 0), new Point(9, 24)]
@@ -57,14 +58,14 @@ export default function createSonic(position : Point, hitboxes ?: AllHitboxes) :
         {
             type: SpriteType.Jumping,
             frames: [
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 0), smallHitbox), sensors: jumpingSensors },
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 192), smallHitbox), sensors: jumpingSensors },
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 48), smallHitbox), sensors: jumpingSensors },
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 192), smallHitbox), sensors: jumpingSensors },
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 96), smallHitbox), sensors: jumpingSensors },
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 192), smallHitbox), sensors: jumpingSensors },
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 144), smallHitbox), sensors: jumpingSensors },
-                { frame: new SolidObjectFrame(48, 48, new Point(192, 192), smallHitbox), sensors: jumpingSensors }
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 1), smallHitbox), sensors: jumpingSensors },
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 193), smallHitbox), sensors: jumpingSensors },
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 49), smallHitbox), sensors: jumpingSensors },
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 193), smallHitbox), sensors: jumpingSensors },
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 97), smallHitbox), sensors: jumpingSensors },
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 193), smallHitbox), sensors: jumpingSensors },
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 145), smallHitbox), sensors: jumpingSensors },
+                { frame: new SolidObjectFrame(48, 48, new Point(192, 193), smallHitbox), sensors: jumpingSensors }
             ]
         }
     ];
@@ -82,6 +83,7 @@ export default function createSonic(position : Point, hitboxes ?: AllHitboxes) :
             spriteImage: "sonic"
         },
         position,
-        hitboxes
+        hitboxes,
+        platform
     )
 }
