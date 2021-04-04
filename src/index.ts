@@ -16,7 +16,7 @@ import * as _ from "lodash"
     const canvas = document.querySelector("#canvas") as HTMLCanvasElement
 
 
-    const tileData : { default : string } = await import(`./Assets/Tiles/${"testPlatform"}.webp`)
+    const tileData : { default : string } = await import(`./Assets/Tiles/testPlatform.webp`)
 
     const floor = Platform.createFromLeftTop(
         new Point(-350, 120),
@@ -190,7 +190,7 @@ import * as _ from "lodash"
     if (playSounds) {
         const levelAudioContext = new AudioContext()
 
-        import(`./Assets/sounds/${"azurelake"}.ogg`)
+        import(`./Assets/sounds/azurelake.ogg`)
             .then(asset => fetch(asset.default, { mode: "cors" }))
             .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
             .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
@@ -222,7 +222,7 @@ import * as _ from "lodash"
             }
         }
 
-        import(`./Assets/sounds/${"jump"}.ogg`).then(function(asset) {
+        import(`./Assets/sounds/jump.ogg`).then(function(asset) {
             jumpAudio = new Audio(asset.default)
             jumpAudio.volume = 0.35
         })
