@@ -37,7 +37,20 @@ export enum Direction {
 
 export type CharacterSprite = {
     type : SpriteType,
-    frames: SolidObjectFrame[]
+    frames: CharacterSpriteFrame[]
+}
+export type CharacterSpriteFrame = {
+    frame: SolidObjectFrame,
+    sensors: TileCollisionSensors
+}
+
+export type TileCollisionSensors = {
+    leftTop: Point,
+    leftCenter: Point,
+    leftBottom: Point,
+    rightTop: Point,
+    rightCenter: Point,
+    rightBottom: Point
 }
 
 export default class Character implements HasHitbox {
@@ -283,7 +296,36 @@ export default class Character implements HasHitbox {
         )
     }
     getSpriteFrame() : SolidObjectFrame {
-        return this.getSprite().frames[this.getSpriteFrameIndex()]
+        return this.getSprite().frames[this.getSpriteFrameIndex()].frame
+    }
+    getSpriteSensors() : TileCollisionSensors {
+        const baseSensors = this.getSprite().frames[this.getSpriteFrameIndex()].sensors
+        return {
+            leftTop: new Point(
+                this.#position.x + baseSensors.leftTop.x,
+                this.#position.y + baseSensors.leftTop.y
+            ),
+            leftCenter: new Point(
+                this.#position.x + baseSensors.leftCenter.x,
+                this.#position.y + baseSensors.leftCenter.y
+            ),
+            leftBottom: new Point(
+                this.#position.x + baseSensors.leftBottom.x,
+                this.#position.y + baseSensors.leftBottom.y
+            ),
+            rightTop: new Point(
+                this.#position.x + baseSensors.rightTop.x,
+                this.#position.y + baseSensors.rightTop.y
+            ),
+            rightCenter: new Point(
+                this.#position.x + baseSensors.rightCenter.x,
+                this.#position.y + baseSensors.rightCenter.y
+            ),
+            rightBottom: new Point(
+                this.#position.x + baseSensors.rightTop.x,
+                this.#position.y + baseSensors.rightBottom.y
+            )
+        }
     }
 
     findCollisions(offset ?: Point) : CheckCollisionInfo[] {

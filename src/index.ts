@@ -106,33 +106,10 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
         const sprite = sonic.getSprite()
 
         const currentFrame = sprite.frames[sonic.getSpriteFrameIndex()]
-        const rect = currentFrame.getRect(sonic.getPosition())
-
-
-        let positionX = rect.getLeft()
-        if (sonic.getDirection() == Direction.Left) {
-            canvasContext.save()
-            canvasContext.translate(canvas.width, 0)
-            canvasContext.scale(-1, 1)
-
-            positionX = canvas.width - rect.getLeft() - currentFrame.width
-        }
-
-        canvasContext.drawImage(
-            sonicImg,
-            currentFrame.imageOffset.x,
-            currentFrame.imageOffset.y,
-            currentFrame.width,
-            currentFrame.height,
-            positionX,
-            rect.getTop(),
-            currentFrame.width,
-            currentFrame.height
-        )
-        canvasContext.restore()
+        const rect = currentFrame.frame.getRect(sonic.getPosition())
         
-        
-        canvasContext.fillStyle = 'hsl(0, 0%, 95%)'
+        // Platforms        
+        canvasContext.fillStyle = "hsl(0, 0%, 95%)"
         canvasContext.fillRect(
             floor.getPositionleftTop().x,
             floor.getPositionleftTop().y,
@@ -140,7 +117,7 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
             floor.dimensions.y
         )
 
-        canvasContext.fillStyle = 'hsl(0, 0%, 90%)'
+        canvasContext.fillStyle = "hsl(0, 0%, 90%)"
         _.range(0, floor.dimensions.x, 10).forEach(function(valueX) {
             _.range(valueX % 20, floor.dimensions.y, 20).forEach(function(valueY) {
 
@@ -156,6 +133,44 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
 
             })
         })
+
+        // Sonic
+        let positionX = rect.getLeft()
+        if (sonic.getDirection() == Direction.Left) {
+            canvasContext.save()
+            canvasContext.translate(canvas.width, 0)
+            canvasContext.scale(-1, 1)
+
+            positionX = canvas.width - rect.getLeft() - currentFrame.frame.width
+        }
+
+        canvasContext.drawImage(
+            sonicImg,
+            currentFrame.frame.imageOffset.x,
+            currentFrame.frame.imageOffset.y,
+            currentFrame.frame.width,
+            currentFrame.frame.height,
+            positionX,
+            rect.getTop(),
+            currentFrame.frame.width,
+            currentFrame.frame.height
+        )
+        canvasContext.restore()
+
+        const sensors = sonic.getSpriteSensors()
+        canvasContext.fillStyle = "#FFFF00"
+        canvasContext.fillRect(sensors.leftTop.x - 1, sensors.leftTop.y - 1, 2, 2)
+        canvasContext.fillRect(sensors.leftCenter.x - 1, sensors.leftCenter.y - 1, 2, 2)
+        canvasContext.fillRect(sensors.leftBottom.x - 1, sensors.leftBottom.y - 1, 2, 2)
+        canvasContext.fillRect(sensors.rightTop.x - 1, sensors.rightTop.y - 1, 2, 2)
+        canvasContext.fillRect(sensors.rightCenter.x - 1, sensors.rightCenter.y - 1, 2, 2)
+        canvasContext.fillRect(sensors.rightBottom.x - 1, sensors.rightBottom.y - 1, 2, 2)
+
+        canvasContext.fillStyle = "#00FF00"
+        canvasContext.fillRect(sonic.getPosition().x - 1, sonic.getPosition().y - 1, 2, 2)
+
+        
+        
 
         window.requestAnimationFrame(reqAnimFrame)
         return 1
