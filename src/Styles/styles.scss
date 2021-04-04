@@ -1,0 +1,38 @@
+:root { background-color: hsl(0, 0%, 0%); }
+body { transform-origin: top left; }
+#screen {
+    height: 240px;
+    width: 426.67px;
+    background-color: #224400;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-top: -120px;
+    margin-left: -213.34px;
+    overflow: auto;
+    image-rendering: pixelated;
+    overflow: hidden;
+}
+#sonic {
+    image-rendering: pixelated;
+    position: absolute;
+    z-index: 3;
+}
+.hitbox {
+    box-sizing: border-box;
+    position: absolute;
+    border: 1px solid hsla(170, 100%, 60%, 0.5);
+    display: none;
+    z-index: 10
+}
+#zoomButtonPlus { left: 42px; }
+
+#floor {
+    box-sizing: border-box;
+    position: absolute;
+    background-image: url("../Assets/sprites/floor.webp");
+    z-index: 4;
+}
+#jumpAudio {
+    visibility: hidden;
+}

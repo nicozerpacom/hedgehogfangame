@@ -1,3 +1,5 @@
+import "./Styles/styles.scss"
+
 import createSonic from "./Characters/Sonic"
 import Point, { Rect } from "./Point"
 import { MoveType, Direction } from "./Character"
@@ -15,11 +17,11 @@ const floorHitbox : HTMLDivElement = document.querySelector("#floorHitbox")
 
 
 const floor = new Platform(
-    new Point(800, 260),
+    new Point(800, 210),
     Rect.create(-800, -35, 800, 35),
     Rect.create(-800, -25, 800, 35)
 )
-const sonic = createSonic(new Point(30, 201), allHitboxes)
+const sonic = createSonic(new Point(30, 200), allHitboxes)
 
 allHitboxes.push(sonic)
 allHitboxes.push(floor)
@@ -69,7 +71,9 @@ function reqAnimFrame() {
     
     if (keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length > 0) {
         movements.push([MoveType.Jump, null])
-        jumpAudio.play()
+        if (jumpAudio) {
+            jumpAudio.play()
+        }
         sonicMoved = true
     }
     
@@ -82,7 +86,9 @@ function reqAnimFrame() {
     sonic.updateMovement()
 
     const sprite = sonic.getSprite()
-    sonicDiv.style.backgroundImage = `url("/sprites/${sprite.fileName}.webp")`
+    import(`./Assets/sprites/${sprite.fileName}.webp`).then(function(sonicImg) {
+        sonicDiv.style.backgroundImage = `url("${sonicImg.default}")`
+    })
 
     const currentFrame = sprite.frames[sonic.getSpriteFrameIndex()]
 
@@ -117,47 +123,15 @@ function reqAnimFrame() {
     floorHitbox.style.width = `${floor.getHitbox().getWidth()}px`
     floorHitbox.style.height = `${floor.getHitbox().getHeight()}px`
 
-    // console.log(sonic.findCollisions())
-    
     window.requestAnimationFrame(reqAnimFrame)
     return 1
 }
 window.requestAnimationFrame(reqAnimFrame)
 
-let zoom : number = 1
-document.querySelector("#zoomButtonPlus").addEventListener("click", function() : void {
-    zoom *= 1.5
-    updateZoom()
-})
-document.querySelector("#zoomButtonMinus").addEventListener("click", function() : void {
-    zoom /= 1.5
-    updateZoom()
-})
-
-
-window.addEventListener("keypress", function(event: KeyboardEvent) {
-    switch (String(event.key).toUpperCase()) {
-        case "+":
-            zoom *= 1.5
-            updateZoom()
-            break
-        case "-":
-            zoom /= 1.5
-            updateZoom()
-            break
-    }
-    
-})
-
-function updateZoom() : void {
-    const screen : HTMLElement = document.body;
-    screen.style.transform = `scale(${zoom}, ${zoom})`
-    screen.style.width = `calc(${(100 / zoom)}% - ${24 / zoom}px)`
-}
-
 const levelAudioContext = new AudioContext()
 
-fetch("/sounds/angelisland1.ogg", { mode: "cors" })
+import(`./Assets/sounds/${"angelisland1"}.ogg`)
+    .then(asset => fetch(asset.default, { mode: "cors" }))
     .then((response : Response) : Promise<ArrayBuffer> => response.arrayBuffer())
     .then((buffer : ArrayBuffer) : Promise<AudioBuffer> => levelAudioContext.decodeAudioData(buffer, initPlayLoop))
 
@@ -187,5 +161,25 @@ function playLoop() {
     }
 }
 
-const jumpAudio = new Audio("/sounds/jump.ogg")
-jumpAudio.volume = 0.35
+let jumpAudio = null
+import(`./Assets/sounds/${"jump"}.ogg`).then(function(asset) {
+    jumpAudio = new Audio(asset.default)
+    jumpAudio.volume = 0.35
+})
+
+
+function updateZoom() {
+    const screen : HTMLDivElement = document.querySelector("#screen")
+
+    let proportion = window.innerWidth / screen.clientWidth
+    
+    if (screen.clientHeight * proportion > window.innerHeight) {
+        proportion = window.innerHeight / screen.clientHeight
+    }
+
+    screen.style.transform = `scale(${proportion}, ${proportion})`
+}
+updateZoom()
+
+window.addEventListener("resize", updateZoom)
+

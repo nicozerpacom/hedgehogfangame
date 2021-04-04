@@ -4,59 +4,8 @@
     <meta charset="UTF-8">
     <title>HTML Sonic 3</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="preload" as="image" type="image/webp" href="/sprites/sonic.webp">
-
-    <style>
-        :root { background-color: hsl(0, 0%, 80%); }
-        body { transform-origin: top left; }
-        #screen {
-            height: 320px /*240px*/;
-            background-color: #224400;
-            position: relative;
-            overflow: auto;
-            image-rendering: pixelated;
-            overflow-y: hidden;
-        }
-        #sonic {
-            image-rendering: pixelated;
-            position: absolute;
-            z-index: 3;
-        }
-        .hitbox {
-            box-sizing: border-box;
-            position: absolute;
-            border: 1px solid hsla(170, 100%, 60%, 0.5);
-            display: none;
-            z-index: 10
-        }
-        #zoomButtonPlus, #zoomButtonMinus {
-            position: absolute;
-            z-index: 2;
-            left: 12px;
-            top: 12px;
-            width: 30px;
-            height: 30px;
-            line-height: 20px;
-            font-size: 10px;
-            padding: 0px;
-        }
-        #zoomButtonPlus { left: 42px; }
-
-        #floor {
-            box-sizing: border-box;
-            position: absolute;
-            background-image: url("/sprites/floor.webp");
-            z-index: 4;
-        }
-        #jumpAudio {
-            visibility: hidden;
-        }
-    </style>
 </head>
 <body>
-    <button id="zoomButtonMinus">➖</button>
-    <button id="zoomButtonPlus">➕</button>
     <div id="screen">
         <div id="sonic">
             <div class="hitbox"></div>
