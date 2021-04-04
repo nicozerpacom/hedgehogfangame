@@ -5,26 +5,20 @@ import Point, { Rect } from "./Point"
 import { MoveType, Direction } from "./Character"
 import Platform from "./Platform"
 import { AllHitboxes } from "./SolidObjects"
+import * as _ from "lodash"
 
-const playSounds = false
+const playSounds = true
 
 const allHitboxes : AllHitboxes = []
 
-const screenDiv : HTMLDivElement = document.querySelector("#screen")
-
-const sonicDiv : HTMLDivElement = document.querySelector("#sonic")
-const sonicHitbox : HTMLDivElement = sonicDiv.querySelector(".hitbox")
-
-const floorDiv : HTMLDivElement = document.querySelector("#floor")
-const floorHitbox : HTMLDivElement = document.querySelector("#floorHitbox")
-
+const canvas = document.querySelector("#canvas") as HTMLCanvasElement
 
 const floor = new Platform(
-    new Point(800, 210),
-    Rect.create(-800, -35, 800, 35),
-    Rect.create(-800, -35, 800, 35)
+    new Point(199, 200),
+    Rect.create(-300, -20, 300, 20),
+    Rect.create(-300, -20, 300, 20)
 )
-const sonic = createSonic(new Point(30, 200), allHitboxes)
+const sonic = createSonic(new Point(199, 155), allHitboxes)
 
 allHitboxes.push(sonic)
 allHitboxes.push(floor)
@@ -33,39 +27,22 @@ let keysBeingPressed : string[] = [];
 window.addEventListener("keydown", function(event: KeyboardEvent) {
     const key = String(event.key).toUpperCase()
 
-    if (event.ctrlKey) {
-        console.log(key)
-        if (key == "ARROWRIGHT") {
-            screenDiv.scrollLeft += 5
-            event.preventDefault()
-        } else if (key == "ARROWLEFT") {
-            screenDiv.scrollLeft -= 5
-            event.preventDefault()
-        } else if (key == "ARROWUP") {
-            screenDiv.scrollTop -= 5
-            event.preventDefault()
-        } else if (key == "ARROWDOWN") {
-            screenDiv.scrollTop += 5
-            event.preventDefault()
-        }
-    } else {
-        if (key == "ARROWRIGHT" && !keysBeingPressed.includes(key)) {
-            keysBeingPressed.push(key);
-            event.preventDefault()
-        }
+    if (key == "ARROWRIGHT" && !keysBeingPressed.includes(key)) {
+        keysBeingPressed.push(key);
+        event.preventDefault()
+    }
 
-        if (key == "ARROWLEFT" && !keysBeingPressed.includes(key)) {
-            keysBeingPressed.push(key);
-            event.preventDefault()
-        }
+    if (key == "ARROWLEFT" && !keysBeingPressed.includes(key)) {
+        keysBeingPressed.push(key);
+        event.preventDefault()
+    }
 
-        if (
-            ["A", "S", "D"].includes(key)
-            && keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length == 0
-        ) {
-            keysBeingPressed.push(key)
-            event.preventDefault()
-        }
+    if (
+        ["A", "S", "D"].includes(key)
+        && keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length == 0
+    ) {
+        keysBeingPressed.push(key)
+        event.preventDefault()
     }
 });
 
@@ -78,78 +55,117 @@ window.addEventListener("keyup", function(event : KeyboardEvent) {
     }
 });
 
-function reqAnimFrame() {
 
-    let sonicMoved = false
+(async function() {
+    const sonicImgData = await import(`./Assets/sprites/${sonic.getSpriteImage()}.webp`)    
+    const sonicImg = new Image()
+    sonicImg.src = sonicImgData.default
 
-    const movements : Array<[MoveType, Direction]> = []
-    if (keysBeingPressed.includes("ARROWLEFT")) {
+    const canvasContext = canvas.getContext("2d")
+    canvasContext.imageSmoothingEnabled = false
 
-        movements.push([MoveType.Walk, Direction.Left])
-        sonicMoved = true
-    } else if (keysBeingPressed.includes("ARROWRIGHT")) {
-        movements.push([MoveType.Walk, Direction.Right])
-        sonicMoved = true
-    }
-    
-    if (keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length > 0) {
-        movements.push([MoveType.Jump, null])
-        if (jumpAudio) {
-            jumpAudio.play()
+
+    function reqAnimFrame() {
+
+        canvasContext.fillStyle = 'hsl(0, 0%, 10%)'
+        canvasContext.fillRect(0, 0, canvas.width, canvas.height)
+
+        canvasContext.fillStyle = 'hsl(0, 0%, 15%)'
+
+        _.range(0, canvas.width, 10).forEach(function(valueX) {
+            _.range(valueX % 20, canvas.height, 20).forEach(function(valueY) {
+                canvasContext.fillRect(valueX, valueY, 10, 10)
+            })
+        })
+        
+
+        let sonicMoved = false
+
+        const movements : Array<[MoveType, Direction]> = []
+        if (keysBeingPressed.includes("ARROWLEFT")) {
+
+            movements.push([MoveType.Walk, Direction.Left])
+            sonicMoved = true
+        } else if (keysBeingPressed.includes("ARROWRIGHT")) {
+            movements.push([MoveType.Walk, Direction.Right])
+            sonicMoved = true
         }
-        sonicMoved = true
+        
+        if (keysBeingPressed.filter(key => ["A", "S", "D"].includes(key)).length > 0) {
+            movements.push([MoveType.Jump, null])
+            if (jumpAudio) {
+                jumpAudio.play()
+            }
+            sonicMoved = true
+        }
+        
+        if (!sonicMoved) {
+            movements.push([MoveType.None, null])
+        }
+
+        sonic.move(movements)
+
+        sonic.updateMovement()
+
+        const sprite = sonic.getSprite()
+
+        const currentFrame = sprite.frames[sonic.getSpriteFrameIndex()]
+        const rect = currentFrame.getRect(sonic.getPosition())
+
+
+        let positionX = rect.getLeft()
+        if (sonic.getDirection() == Direction.Left) {
+            canvasContext.save()
+            canvasContext.translate(canvas.width, 0)
+            canvasContext.scale(-1, 1)
+
+            positionX = canvas.width - rect.getLeft() - currentFrame.width
+        }
+
+        canvasContext.drawImage(
+            sonicImg,
+            currentFrame.imageOffset.x,
+            currentFrame.imageOffset.y,
+            currentFrame.width,
+            currentFrame.height,
+            positionX,
+            rect.getTop(),
+            currentFrame.width,
+            currentFrame.height
+        )
+        canvasContext.restore()
+        
+        
+        canvasContext.fillStyle = 'hsl(0, 0%, 95%)'
+        canvasContext.fillRect(
+            floor.getPositionleftTop().x,
+            floor.getPositionleftTop().y,
+            floor.rect.getWidth(),
+            floor.rect.getHeight()
+        )
+
+        canvasContext.fillStyle = 'hsl(0, 0%, 90%)'
+        _.range(0, floor.rect.getWidth(), 10).forEach(function(valueX) {
+            _.range(valueX % 20, floor.rect.getHeight(), 20).forEach(function(valueY) {
+
+                const remainderX = floor.rect.getWidth() - valueX
+                const remainderY = floor.rect.getHeight() - valueY
+
+                canvasContext.fillRect(
+                    floor.getPositionleftTop().x + valueX,
+                    floor.getPositionleftTop().y + valueY,
+                    Math.min(remainderX, 10),
+                    Math.min(remainderY, 10)
+                )
+
+            })
+        })
+
+        window.requestAnimationFrame(reqAnimFrame)
+        return 1
     }
-    
-    if (!sonicMoved) {
-        movements.push([MoveType.None, null])
-    }
-
-    sonic.move(movements)
-
-    sonic.updateMovement()
-
-    const sprite = sonic.getSprite()
-    import(`./Assets/sprites/${sprite.fileName}.webp`).then(function(sonicImg) {
-        sonicDiv.style.backgroundImage = `url("${sonicImg.default}")`
-    })
-
-    const currentFrame = sprite.frames[sonic.getSpriteFrameIndex()]
-
-    const rect = currentFrame.getRect(sonic.getPosition())
-
-    sonicDiv.style.left = `${rect.leftTop.x}px`
-    sonicDiv.style.top = `${rect.leftTop.y}px`
-
-    sonicDiv.style.width = `${currentFrame.width}px`
-    sonicDiv.style.height = `${currentFrame.height}px`
-    sonicDiv.style.backgroundPosition = `-${currentFrame.imageOffset.x}px -${currentFrame.imageOffset.y}px`
-
-    sonicHitbox.style.left = "50%"
-    sonicHitbox.style.top = "50%"
-    sonicHitbox.style.transform = `translate(${currentFrame.hitbox[0].x}px, ${currentFrame.hitbox[0].y}px)`
-    sonicHitbox.style.width = `${Math.abs(currentFrame.hitbox[0].x) + Math.abs(currentFrame.hitbox[1].x)}px`
-    sonicHitbox.style.height = `${Math.abs(currentFrame.hitbox[0].y) + Math.abs(currentFrame.hitbox[1].y)}px`
-    
-    if (sonic.getDirection() == Direction.Left) {
-        sonicDiv.style.transform = "rotateY(180deg)"
-    } else {
-        sonicDiv.style.transform = ""
-    }
-
-    floorDiv.style.left = `${floor.getPositionleftTop().x}px`
-    floorDiv.style.top = `${floor.getPositionleftTop().y}px`
-    floorDiv.style.width = `${floor.rect.getWidth()}px`
-    floorDiv.style.height = `${floor.rect.getHeight()}px`
-
-    floorHitbox.style.left = `${floor.getHitbox().getLeft()}px`
-    floorHitbox.style.top = `${floor.getHitbox().getTop()}px`
-    floorHitbox.style.width = `${floor.getHitbox().getWidth()}px`
-    floorHitbox.style.height = `${floor.getHitbox().getHeight()}px`
-
     window.requestAnimationFrame(reqAnimFrame)
-    return 1
-}
-window.requestAnimationFrame(reqAnimFrame)
+})()
 
 let jumpAudio = null
 if (playSounds) {
@@ -193,17 +209,17 @@ if (playSounds) {
 
 
 function updateZoom() {
-    const screen : HTMLDivElement = document.querySelector("#screen")
-
-    let proportion = window.innerWidth / screen.clientWidth
-    
-    if (screen.clientHeight * proportion > window.innerHeight) {
-        proportion = window.innerHeight / screen.clientHeight
+    if (window.innerWidth >= window.innerHeight) {
+        canvas.style.width = `${window.innerHeight * 16 / 9}px`
+        canvas.style.height = `${window.innerHeight}px`
+    } else {
+        canvas.style.width = `${window.innerWidth}px`
+        canvas.style.height = `${window.innerWidth * 9 / 16}px`
     }
-
-    screen.style.transform = `scale(${proportion}, ${proportion})`
 }
 updateZoom()
 
 window.addEventListener("resize", updateZoom)
+
+
 

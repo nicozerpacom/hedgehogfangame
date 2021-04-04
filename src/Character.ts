@@ -10,6 +10,7 @@ type CharacterSettings = {
     topSpeed: number
     gravity: number,
     jumpSpeed : number,
+    spriteImage: string,
     sprites: CharacterSprite[]
 }
 
@@ -36,7 +37,6 @@ export enum Direction {
 
 export type CharacterSprite = {
     type : SpriteType,
-    fileName: string,
     frames: SolidObjectFrame[]
 }
 
@@ -115,6 +115,10 @@ export default class Character implements HasHitbox {
         } else {
             this.#nextSpriteCounter--
         }
+    }
+
+    getSpriteImage() : string {
+        return this.#settings.spriteImage
     }
 
     private updateSprite() : void {

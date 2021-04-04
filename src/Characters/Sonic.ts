@@ -19,27 +19,22 @@ export default function createSonic(position : Point, hitboxes ?: AllHitboxes) :
     const sprites : CharacterSprite[] = [
         {
             type: SpriteType.Idle,
-            fileName: "sonic",
             frames: [new SolidObjectFrame(48, 48, new Point(0, 0), defaultHitbox)]
         },
         {
             type: SpriteType.Walking,
-            fileName: "sonic",
             frames:_.range(0, 8).map(simpleAnimationMap(1))
         },
         {
             type: SpriteType.Running,
-            fileName: "sonic",
             frames: _.range(0, 4).map(simpleAnimationMap(2))
         },
         {
             type: SpriteType.Skidding,
-            fileName: "sonic",
             frames: _.range(0, 3).map(simpleAnimationMap(3))
         },
         {
             type: SpriteType.Jumping,
-            fileName: "sonic",
             frames: [
                 new SolidObjectFrame(48, 48, new Point(196, 0), smallHitbox),
                 new SolidObjectFrame(48, 48, new Point(196, 192), smallHitbox),
@@ -62,7 +57,8 @@ export default function createSonic(position : Point, hitboxes ?: AllHitboxes) :
             topSpeed: 6,
             gravity: 0.21875,
             sprites: sprites,
-            jumpSpeed: 6.5
+            jumpSpeed: 6.5,
+            spriteImage: "sonic"
         },
         position,
         hitboxes
