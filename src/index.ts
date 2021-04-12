@@ -2,7 +2,7 @@ import "./Styles/styles.scss"
 
 import createSonic from "./Characters/Sonic"
 import Point, { Rect } from "./Point"
-import { MoveType, Direction } from "./Character"
+import { MoveType, DirectionX } from "./Character"
 import Platform from "./Platform"
 import { AllHitboxes } from "./SolidObjects"
 import * as _ from "lodash"
@@ -111,13 +111,13 @@ import * as _ from "lodash"
 
         let sonicMoved = false
 
-        const movements : Array<[MoveType, Direction]> = []
+        const movements : Array<[MoveType, DirectionX]> = []
         if (keysBeingPressed.includes("ARROWLEFT")) {
 
-            movements.push([MoveType.Walk, Direction.Left])
+            movements.push([MoveType.Walk, DirectionX.Left])
             sonicMoved = true
         } else if (keysBeingPressed.includes("ARROWRIGHT")) {
-            movements.push([MoveType.Walk, Direction.Right])
+            movements.push([MoveType.Walk, DirectionX.Right])
             sonicMoved = true
         }
         
@@ -144,7 +144,7 @@ import * as _ from "lodash"
         
         // Sonic
         let positionX = rect.getLeft()
-        if (sonic.getDirection() == Direction.Left) {
+        if (sonic.getDirection() == DirectionX.Left) {
             canvasContext.save()
             canvasContext.translate(canvas.width, 0)
             canvasContext.scale(-1, 1)
@@ -167,15 +167,15 @@ import * as _ from "lodash"
 
         const sensors = sonic.getSpriteSensors()
         canvasContext.fillStyle = "#FFFF00"
-        canvasContext.fillRect(sensors.leftTop.x - 1, sensors.leftTop.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.leftCenter.x - 1, sensors.leftCenter.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.leftBottom.x - 1, sensors.leftBottom.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.rightTop.x - 1, sensors.rightTop.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.rightCenter.x - 1, sensors.rightCenter.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.rightBottom.x - 1, sensors.rightBottom.y - 1, 2, 2)
+        canvasContext.fillRect(sensors.leftTop.x, sensors.leftTop.y, 1, 1)
+        canvasContext.fillRect(sensors.leftCenter.x, sensors.leftCenter.y, 1, 1)
+        canvasContext.fillRect(sensors.leftBottom.x, sensors.leftBottom.y, 1, 1)
+        canvasContext.fillRect(sensors.rightTop.x, sensors.rightTop.y, 1, 1)
+        canvasContext.fillRect(sensors.rightCenter.x, sensors.rightCenter.y, 1, 1)
+        canvasContext.fillRect(sensors.rightBottom.x, sensors.rightBottom.y, 1, 1)
 
         canvasContext.fillStyle = "#00FF00"
-        canvasContext.fillRect(sonic.getPosition().x - 1, sonic.getPosition().y - 1, 2, 2)
+        canvasContext.fillRect(sonic.getPosition().x, sonic.getPosition().y, 1, 1)
 
         
         
