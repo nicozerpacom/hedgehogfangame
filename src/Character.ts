@@ -31,13 +31,9 @@ export enum MoveType {
     JumpPassive
 }
 
-export enum DirectionX {
+export enum Direction {
     Left = 0,
     Right
-}
-export enum DirectionY {
-    Top = 0,
-    Bottom
 }
 
 export type CharacterSprite = {
@@ -62,10 +58,10 @@ export default class Character implements HasHitbox {
     #settings : CharacterSettings
     #position : Point
     #spriteType : SpriteType
-    #direction : DirectionX
+    #direction : Direction
     #currentSpeedX : Speed
     #currentSpeedY : Speed
-    #lastMovesTypes : Array<[MoveType, DirectionX]>
+    #lastMovesTypes : Array<[MoveType, Direction]>
     #spriteFrameIndex : number
     #nextSpriteCounter : number
     #isJumping : boolean = false
@@ -83,7 +79,7 @@ export default class Character implements HasHitbox {
         this.#currentSpeedX = new Speed()
         this.#currentSpeedY = new Speed()
         this.#spriteType = SpriteType.Idle
-        this.#direction = DirectionX.Right
+        this.#direction = Direction.Right
         this.#nextSpriteCounter = 0
         this.#spriteFrameIndex = 0
     }
@@ -95,7 +91,7 @@ export default class Character implements HasHitbox {
         let indexA = 0
         let indexB = 1
 
-        if (this.#direction == DirectionX.Left) {
+        if (this.#direction == Direction.Left) {
             indexA = 1
             indexB = 0
         }
@@ -114,11 +110,11 @@ export default class Character implements HasHitbox {
     getSpriteType() : SpriteType {
         return this.#spriteType
     }
-    getDirection() : DirectionX {
+    getDirection() : Direction {
         return this.#direction
     }
 
-    move(moveTypes : Array<[MoveType, DirectionX]>) {
+    move(moveTypes : Array<[MoveType, Direction]>) {
         this.#lastMovesTypes = moveTypes
     }
 
@@ -201,7 +197,6 @@ export default class Character implements HasHitbox {
     }
 
     updateMovement() {
-        const oldPosition = new Point(this.#position.x, this.#position.y)
         let currentSpeedX = Math.abs(this.#currentSpeedX.getAbsolute())
 
         let nextDirection = null
@@ -251,13 +246,13 @@ export default class Character implements HasHitbox {
             currentSpeedX = Math.max(0, currentSpeedX - this.#settings.friction)
         }
 
-        if (nextDirection == DirectionX.Left) {
-            this.#direction = DirectionX.Left
-        } else if (nextDirection == DirectionX.Right) {
-            this.#direction = DirectionX.Right
+        if (nextDirection == Direction.Left) {
+            this.#direction = Direction.Left
+        } else if (nextDirection == Direction.Right) {
+            this.#direction = Direction.Right
         }
 
-        if (this.#direction == DirectionX.Left) {
+        if (this.#direction == Direction.Left) {
             this.#currentSpeedX.set(-currentSpeedX)
         } else {
             this.#currentSpeedX.set(currentSpeedX)
@@ -278,26 +273,21 @@ export default class Character implements HasHitbox {
             this.#position.y + this.#currentSpeedY.get()
         )
         
-        this.findCollisions(
-            this.#position.x >= oldPosition.x ? DirectionX.Right : DirectionX.Left,
-            this.#position.y >= oldPosition.y ? DirectionY.Bottom : DirectionY.Top
-        ).forEach((collision) => {
-            this.#position.set(
-                this.#position.x + collision.offsetX,
-                this.#position.y + collision.offsetY
-            )
+        const collisionsY = this
+            .findCollisions()
+            .filter(item => item.offsetY != 0)
 
-            if (collision.offsetX != 0) {
-                this.#currentSpeedX.set(0)
-            }
-            if (collision.offsetY != 0) {
-                this.#currentSpeedY.set(0)
-            }
+        if (collisionsY.length > 0) {
+            this.#position.set(
+                this.#position.x,
+                this.#position.y - Math.abs(collisionsY[0].offsetY)
+            )
+            this.#currentSpeedY.set(0)
 
             if (this.#isJumping) {
                 this.#isJumping = false
             }
-        })
+        }
 
         this.updateSprite()
     }
@@ -340,95 +330,49 @@ export default class Character implements HasHitbox {
         }
     }
 
-    findCollisions(directionX : DirectionX = DirectionX.Right, directionY : DirectionY = DirectionY.Bottom, offset ?: Point) : CheckCollisionInfo[] {
+    findCollisions(offset ?: Point) : CheckCollisionInfo[] {
 
         const output : CheckCollisionInfo[] = []
 
         const sensors = this.getSpriteSensors()
 
-        let sensorTypes : string[]
+        this.platforms.forEach((platform : Platform) => {
+            
+            let bottomCollision : CheckCollisionInfo
+            const posLeftBottoms = platform.getPosYFromX(sensors.leftBottom.x)
+            if (posLeftBottoms.length > 0) {
+                const platformLeftBottom = posLeftBottoms[0]
 
-        if (directionX == DirectionX.Right) {
-            if (directionY == DirectionY.Bottom) {
-                sensorTypes = [
-                    "rightBottom", "rightCenter", "rightTop",
-                    "leftBottom", "leftCenter", "leftTop"
-                ]
-            } else {
-                sensorTypes = [
-                    "rightTop", "rightCenter", "rightBottom",
-                    "leftTop", "leftCenter", "rightTop"
-                ]
-            }
-        } else {
-            if (directionY == DirectionY.Bottom) {
-                sensorTypes = [
-                    "leftBottom", "leftCenter", "leftTop",
-                    "rightBottom", "rightCenter", "rightTop"
-                ]
-            } else {
-                sensorTypes = [
-                    "rightBottom", "rightCenter", "rightTop",
-                    "leftBottom", "leftCenter", "leftTop"
-                ]
-            }
-        }
-
-        ["x", "y"].forEach(dimension => {
-            this.platforms.forEach((platform : Platform) => {
-
-                const otherDimension = dimension == "x" ? "y" : "x"
-                
-                sensorTypes.forEach(sensorType => {
-                    const sensor : Point = sensors[sensorType]
-                    let posList : number[]
-                    
-                    if (dimension == "x") {
-                        posList = platform.getPosXFromY(sensor[otherDimension])
-                    } else {
-                        posList = platform.getPosYFromX(sensor[otherDimension])
+                if (sensors.leftBottom.y >= platformLeftBottom) {
+                    bottomCollision = {
+                        collision: true,
+                        offsetX: 0,
+                        offsetY: platformLeftBottom - sensors.leftBottom.y
                     }
+                }
+            }
 
-                    const platformPosGroup = posList.reduce((aggregate : number[][], item : number) :  number[][] => {
-                            if (aggregate.length == 0) {
-                                aggregate.push([item])
-                            } else {
-                                const lastGroup = aggregate[aggregate.length - 1]
-                                if (lastGroup.length == 2) {
-                                    aggregate.push([item])
-                                } else {
-                                    lastGroup.push(item)
-                                }
-                            }
-                            return aggregate
-                        }, [] as  number[][])
+            const posRightBottoms = platform.getPosYFromX(sensors.rightBottom.x)
+            if (posRightBottoms.length > 0) {
+                const platformRightBottom = posRightBottoms[0]
 
-                    platformPosGroup.forEach(posGroup => {
-                        if (sensor[dimension] >= posGroup[0] - 1 && sensor[dimension] <= posGroup[1] + 1) {
-                            let offsets = {
-                                "x": 0,
-                                "y": 0
-                            }
+                if (sensors.leftBottom.y >= platformRightBottom) {
 
-                            if (directionY == DirectionY.Bottom) {
-                                offsets[dimension] = posGroup[0] - sensor[dimension] - 1
-                            } else {
-                                offsets[dimension] = posGroup[1] - sensor[dimension] + 1
-                            }
-
-                            output.push({
-                                collision: true,
-                                offsetX: offsets.x,
-                                offsetY: offsets.y
-                            })
+                    if (
+                        !bottomCollision
+                        || bottomCollision && Math.abs(bottomCollision.offsetY) < Math.abs(platformRightBottom - sensors.rightBottom.y)
+                    ) {
+                        bottomCollision = {
+                            collision: true,
+                            offsetX: 0,
+                            offsetY: platformRightBottom - sensors.rightBottom.y
                         }
-                    })
-                })
-            })
+                    }
+                }
+            }
+
+            if (bottomCollision) output.push(bottomCollision)
         })
-
-
-        
 
         return output
 
