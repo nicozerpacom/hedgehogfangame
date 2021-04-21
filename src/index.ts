@@ -9,7 +9,7 @@ import * as _ from "lodash"
 
 
 (async function() {
-    const playSounds = true
+    const playSounds = !true
 
     const allHitboxes : AllHitboxes = []
 

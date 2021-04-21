@@ -45,7 +45,7 @@ export default function createSonic(position : Point, hitboxes ?: AllHitboxes, p
         },
         {
             type: SpriteType.Walking,
-            frames:_.range(0, 8).map(simpleAnimationMap(1))
+            frames:_.range(0, 6).map(simpleAnimationMap(1))
         },
         {
             type: SpriteType.Running,
@@ -53,7 +53,7 @@ export default function createSonic(position : Point, hitboxes ?: AllHitboxes, p
         },
         {
             type: SpriteType.Skidding,
-            frames: _.range(0, 3).map(simpleAnimationMap(3))
+            frames: _.range(0, 2).map(simpleAnimationMap(3))
         },
         {
             type: SpriteType.Jumping,
