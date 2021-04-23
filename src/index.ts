@@ -80,8 +80,11 @@ import * as _ from "lodash"
     const canvasContext = canvas.getContext("2d")
     canvasContext.imageSmoothingEnabled = false
 
+    const cameraCenter = new Point(canvas.width / 2, canvas.height / 2)
+    const cameraOffset = new Point(0, 0)
 
     async function reqAnimFrame() {
+
         canvasContext.fillStyle = 'hsl(0, 0%, 10%)'
         canvasContext.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -92,21 +95,6 @@ import * as _ from "lodash"
                 canvasContext.fillRect(valueX, valueY, 10, 10)
             })
         })
-
-
-        canvasContext.fillStyle = "hsl(0, 0%, 90%)"
-        canvasContext.beginPath()
-        canvasContext.moveTo(
-            floor.getPositionleftTop().x + floor.points[0].x,
-            floor.getPositionleftTop().y + floor.points[0].y
-        )
-        floor.points.slice(1).forEach(function(point) {
-            canvasContext.lineTo(
-                floor.getPositionleftTop().x + point.x,
-                floor.getPositionleftTop().y + point.y
-            )
-        })
-        canvasContext.fill()
 
 
         let sonicMoved = false
@@ -138,18 +126,41 @@ import * as _ from "lodash"
         sonic.updateMovement()
 
         const sprite = sonic.getSprite()
-
         const currentFrame = sprite.frames[sonic.getSpriteFrameIndex()]
         const rect = currentFrame.frame.getRect(sonic.getPosition())
+
         
+        const positionWithoutOffset = new Point(
+            sonic.getPosition().x - (cameraCenter.x - canvas.width / 2),
+            sonic.getPosition().y - (cameraCenter.y - canvas.height / 2)
+        )
+
+        if (positionWithoutOffset.x >= 160) {
+            cameraCenter.x += Math.min(16, positionWithoutOffset.x - 160)
+        } else if (positionWithoutOffset.x <= 144) {
+            cameraCenter.x -= Math.min(16, 144 - positionWithoutOffset.x)
+        }
+
+        if (positionWithoutOffset.y >= 128) {
+            cameraCenter.y += Math.min(16, positionWithoutOffset.y - 128)
+        } else if (positionWithoutOffset.y <= 64) {
+            cameraCenter.y -= Math.min(16, 64 - positionWithoutOffset.y)
+        }
+
+        cameraOffset.x = cameraCenter.x - canvas.width / 2
+        cameraOffset.y = cameraCenter.y - canvas.height / 2
+
         // Sonic
         let positionX = rect.getLeft()
+
+        positionX -= cameraOffset.x
+
         if (sonic.getDirection() == Direction.Left) {
             canvasContext.save()
             canvasContext.translate(canvas.width, 0)
             canvasContext.scale(-1, 1)
 
-            positionX = canvas.width - rect.getLeft() - currentFrame.frame.width
+            positionX = canvas.width - positionX - currentFrame.frame.width
         }
 
         canvasContext.drawImage(
@@ -159,25 +170,40 @@ import * as _ from "lodash"
             currentFrame.frame.width,
             currentFrame.frame.height,
             positionX,
-            rect.getTop(),
+            rect.getTop() - cameraOffset.y,
             currentFrame.frame.width,
             currentFrame.frame.height
         )
         canvasContext.restore()
 
+        // Floor
+        canvasContext.fillStyle = "hsl(0, 0%, 90%)"
+        canvasContext.beginPath()
+        canvasContext.moveTo(
+            floor.getPositionleftTop().x - cameraOffset.x + floor.points[0].x,
+            floor.getPositionleftTop().y - cameraOffset.y + floor.points[0].y
+        )
+        floor.points.slice(1).forEach(function(point) {
+            canvasContext.lineTo(
+                floor.getPositionleftTop().x - cameraOffset.x + point.x,
+                floor.getPositionleftTop().y - cameraOffset.y + point.y
+            )
+        })
+        canvasContext.fill()
+
+
+        // Sensors
         const sensors = sonic.getSpriteSensors()
         canvasContext.fillStyle = "#FFFF00"
-        canvasContext.fillRect(sensors.leftTop.x, sensors.leftTop.y, 1, 1)
-        canvasContext.fillRect(sensors.leftCenter.x, sensors.leftCenter.y, 1, 1)
-        canvasContext.fillRect(sensors.leftBottom.x, sensors.leftBottom.y, 1, 1)
-        canvasContext.fillRect(sensors.rightTop.x, sensors.rightTop.y, 1, 1)
-        canvasContext.fillRect(sensors.rightCenter.x, sensors.rightCenter.y, 1, 1)
-        canvasContext.fillRect(sensors.rightBottom.x, sensors.rightBottom.y, 1, 1)
+        canvasContext.fillRect(sensors.leftTop.x - cameraOffset.x, sensors.leftTop.y - cameraOffset.y, 1, 1)
+        canvasContext.fillRect(sensors.leftCenter.x - cameraOffset.x, sensors.leftCenter.y - cameraOffset.y, 1, 1)
+        canvasContext.fillRect(sensors.leftBottom.x - cameraOffset.x, sensors.leftBottom.y - cameraOffset.y, 1, 1)
+        canvasContext.fillRect(sensors.rightTop.x - cameraOffset.x, sensors.rightTop.y - cameraOffset.y, 1, 1)
+        canvasContext.fillRect(sensors.rightCenter.x - cameraOffset.x, sensors.rightCenter.y - cameraOffset.y, 1, 1)
+        canvasContext.fillRect(sensors.rightBottom.x - cameraOffset.x, sensors.rightBottom.y - cameraOffset.y, 1, 1)
 
         canvasContext.fillStyle = "#00FF00"
-        canvasContext.fillRect(sonic.getPosition().x - 1, sonic.getPosition().y - 1, 2, 2)
-
-        
+        canvasContext.fillRect(sonic.getPosition().x - 1 - cameraOffset.x, sonic.getPosition().y - 1 - cameraOffset.y, 2, 2)
         
 
         window.requestAnimationFrame(reqAnimFrame)
