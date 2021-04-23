@@ -9,7 +9,7 @@ import * as _ from "lodash"
 
 
 (async function() {
-    const playSounds = !true
+    const playSounds = true
 
     const allHitboxes : AllHitboxes = []
 
@@ -167,12 +167,12 @@ import * as _ from "lodash"
 
         const sensors = sonic.getSpriteSensors()
         canvasContext.fillStyle = "#FFFF00"
-        canvasContext.fillRect(sensors.leftTop.x - 1, sensors.leftTop.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.leftCenter.x - 1, sensors.leftCenter.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.leftBottom.x - 1, sensors.leftBottom.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.rightTop.x - 1, sensors.rightTop.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.rightCenter.x - 1, sensors.rightCenter.y - 1, 2, 2)
-        canvasContext.fillRect(sensors.rightBottom.x - 1, sensors.rightBottom.y - 1, 2, 2)
+        canvasContext.fillRect(sensors.leftTop.x, sensors.leftTop.y, 1, 1)
+        canvasContext.fillRect(sensors.leftCenter.x, sensors.leftCenter.y, 1, 1)
+        canvasContext.fillRect(sensors.leftBottom.x, sensors.leftBottom.y, 1, 1)
+        canvasContext.fillRect(sensors.rightTop.x, sensors.rightTop.y, 1, 1)
+        canvasContext.fillRect(sensors.rightCenter.x, sensors.rightCenter.y, 1, 1)
+        canvasContext.fillRect(sensors.rightBottom.x, sensors.rightBottom.y, 1, 1)
 
         canvasContext.fillStyle = "#00FF00"
         canvasContext.fillRect(sonic.getPosition().x - 1, sonic.getPosition().y - 1, 2, 2)
